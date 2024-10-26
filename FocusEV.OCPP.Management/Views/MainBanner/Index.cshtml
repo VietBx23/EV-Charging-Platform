@@ -1,0 +1,257 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@model BannerViewModel
+@inject IViewLocalizer Localizer
+@{
+    ViewData["Title"] = @Localizer["Main Banner "];
+ 
+    //
+}
+
+@section VendorCSS {
+    <link rel="stylesheet" href="~/vendor/bootstrap-multiselect/bootstrap-multiselect.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-colorpicker/css/bootstrap-colorpicker.css" />
+    <link rel="stylesheet" href="~/vendor/multi-select/css/multi-select.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.css">
+    <link rel="stylesheet" href="~/vendor/nouislider/nouislider.min.css" />
+    <link rel="stylesheet" href="~/vendor/select2/select2.css" />
+
+    <style>
+        .demo-card label {
+            display: block;
+            position: relative;
+        }
+
+        .demo-card .col-lg-4 {
+            margin-bottom: 30px;
+        }
+    </style>
+}
+
+<form method="post" enctype="multipart/form-data" asp-action="SaveAndUpdateMainBanner" asp-controller="MainBanner">
+    <div class="row clearfix">
+        <div class="col-lg-12 col-md-12">
+            <div class="card planned_task">
+                <div class="body">
+                    <div class="row clearfix demo-masked-input">
+                        <div class="row col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                            <div class="col-lg-2 col-md-5">
+                                <input type="hidden" id="BannerId" name="BannerId" value="@Model.BannerId" />
+                                <div class="media">
+                                    <div class="media-left m-r-15">
+                                        @{
+                                            if (Model.Image != null)
+                                            {
+                                                <img src="/images/banner/@Model.Image" class="media-object" alt="Banner" id="filePhotoAvatar" style="width: 100%;">
+                                            }
+                                            else
+                                            {
+                                                <img src="~/images/user.png" class="media-object" alt="Banner" id="filePhotoAvatar" style="width: 100%;">
+                                            }
+                                        }
+                                    </div>
+                                    <div class="media-body">
+                                        <p>Upload your photo.</p>
+                                        <button type="button" class="btn btn-default-dark" id="btn-upload-photo">Upload Photo</button>
+                                        <input onchange="ChangeImg()" type="file" id="fileUpload" class="sr-only" name="files">
+                                        <input asp-for="Image" id="Image" type="hidden" />
+
+                                     
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row col-lg-10 col-md-7">
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="form-group">
+                                        <label>Title </label>
+                                        <div class="input-group">
+                                            <input required asp-for="Title" type="text" class="form-control" id="Title" placeholder="Title" name="Title">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="form-group">
+                                        <label>Action </label>
+                                        <select asp-for="IsActive" id="IsActive" class="form-control" name="IsActive">
+                                            <option value="true">Active</option>
+                                            <option value="false">Inactive</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6 mt-1">
+                                   <label></label>
+                                    <button type="submit" id="submitButton" class="btn mt-4 btn-success" style="margin-right: 15px;">
+                                        <i class="fa fa-save"></i> <span id="buttonText">Save</span>
+                                    </button>
+
+                                    <button type="button" class="btn mt-4 btn-warning" onclick="clearForm()">
+                                        <i class="fa fa-eraser"></i> <span>Clear</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-lg-12 col-md-12">
+            <div class="card planned_task">
+                <div class="header header2">
+                    <h2>DANH SÁCH BANNER</h2>
+                </div>
+                <div class="body">
+                    <div class="table-responsive table-hover m-b-0 c_list myTable">
+                        <table class="table m-b-0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Ảnh</th>
+                                    <th>Tiêu đề</th>
+                                    <th>Trạng thái</th>
+                                    <th>Ngày tạo</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.MainBanners != null && Model.MainBanners.Any())
+                                {
+                                    foreach (var bn in Model.MainBanners)
+                                    {
+                                        <tr>
+                                            <td>@bn.BannerId</td>
+                                            <td>
+                                                <img src="/images/banner/@bn.Image" class="media-object" alt="" style="max-width: 150px;">
+                                            </td>
+                                            <td>@bn.Title</td>
+                                            <td>@bn.IsActive </td>
+                                            <td>@bn.CreatedDate.ToString("dd/MM/yyyy")</td>
+                                            <td>
+                                                <a href="javascript:void(0);" onclick="edit(@bn.BannerId)" class="btn btn-warning">
+                                                    <i class="fa fa-edit"></i> Edit
+                                                </a>
+                                                <a href="javascript:void(0);" onclick="deleteBanner(@bn.BannerId)" class="btn btn-danger">
+                                                    <i class="fa fa-trash"></i> Delete
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center">No banners found.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script src="~/vendor/bootstrap-colorpicker/js/bootstrap-colorpicker.js"></script> <!-- Bootstrap Colorpicker Js -->
+    <script src="~/vendor/jquery-inputmask/jquery.inputmask.bundle.js"></script> <!-- Input Mask Plugin Js -->
+    <script src="~/vendor/jquery.maskedinput/jquery.maskedinput.min.js"></script>
+    <script src="~/vendor/multi-select/js/jquery.multi-select.js"></script> <!-- Multi Select Plugin Js -->
+    <script src="~/vendor/bootstrap-multiselect/bootstrap-multiselect.js"></script>
+    <script src="~/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js"></script> <!-- Bootstrap Tags Input Plugin Js -->
+    <script src="~/vendor/nouislider/nouislider.js"></script> <!-- noUISlider Plugin Js -->
+    <script src="~/vendor/select2/select2.min.js"></script> <!-- Select2 Js -->
+    <script src="~/bundles/mainscripts.bundle.js"></script>
+    <script src="~/js/pages/forms/advanced-form-elements.js"></script>
+
+    <script>
+        document.getElementById("btn-upload-photo").addEventListener("click", function () {
+            document.getElementById("fileUpload").click();
+        });
+
+        function ChangeImg() {
+            var fileInput = document.getElementById("fileUpload");
+            var file = fileInput.files[0];
+            var reader = new FileReader();
+
+            reader.onloadend = function () {
+                document.getElementById("filePhotoAvatar").src = reader.result;
+            }
+
+            if (file) {
+                reader.readAsDataURL(file);
+                $('#Image').val(file.name); // Update hidden input field with file name
+            }
+        }
+
+        function edit(id) {
+            $.ajax({
+                url: '@Url.Action("EditBanner", "MainBanner")',
+                type: 'GET',
+                data: { id: id },
+                success: function (result) {
+                    console.log('Banner data retrieved:', result);
+
+                    // Cập nhật dữ liệu lên form
+                    $('#BannerId').val(result.bannerId);
+                    $('#Title').val(result.title);
+                    $('#IsActive').val(result.isActive.toString()); // Cập nhật IsActive
+                    $('#Image').val(result.image);
+
+                    // Cập nhật ảnh trong form
+                    if (result.image) {
+                        $('#filePhotoAvatar').attr('src', '/images/banner/' + result.image);
+                    } else {
+                        $('#filePhotoAvatar').attr('src', '~/images/user.png'); // Ảnh mặc định nếu không có hình ảnh
+                    }
+
+                    // Change button text to "Update"
+                    $('#buttonText').text('Update');
+                    $('#submitButton').removeClass('btn-success').addClass('btn-primary'); // Optional: change button color
+
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error retrieving banner data:', status, error);
+                }
+            });
+        }
+
+        function deleteBanner(id) {
+            if (confirm('Are you sure you want to delete this banner?')) {
+                $.ajax({
+                    url: '@Url.Action("DeleteMainBanner")',
+                    type: 'POST',
+                    data: { id: id },
+                    success: function (response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function () {
+                        alert('Error deleting banner.');
+                    }
+                });
+            }
+        }
+
+
+        function clearForm() {
+            $('#Title').val('');
+            $('#Image').val('');
+            $('#IsActive').val('true');
+            $('#CreatedDate').val('');
+            $('#filePhotoAvatar').attr('src', '/images/user.png');
+            // $('#filePhotoAvatar').attr('src', '/images/banner/default.jpg'); // Set to a default image if needed
+
+
+            // Change button text to "Update"
+            $('#buttonText').text('Save');
+            $('#submitButton').removeClass('btn-primary').addClass('btn-success'); // Optional: change button color
+        }
+    </script>
+}

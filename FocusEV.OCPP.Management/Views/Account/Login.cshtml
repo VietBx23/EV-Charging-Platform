@@ -1,0 +1,86 @@
+﻿@using System.Collections.Generic
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Mvc.Localization
+@model UserModel
+@inject IViewLocalizer Localizer
+@{
+    ViewData["Title"] = @Localizer["Title"];
+}
+
+@*<h1><i class="fas fa-user"></i> @ViewData["Title"]</h1>*@
+
+@section VendorCSS {
+    <style>
+            .block-header {display: none!important};
+    .left-sidebar {display: none!important};
+    .navbar .navbar-fixed-top {display: none!important};
+    .auth-box h3 {
+        color: white;
+        font-size:14px
+    }
+    </style>
+}
+
+
+<body class="theme-cyan">
+    <!-- WRAPPER -->
+    <div id="wrapper">
+        <div class="vertical-align-wrap">
+            <div class="vertical-align-middle auth-main">
+                <div class="auth-box">
+                    <div class="top">
+                        <h3 style="color:white;">SolarEV <br/><span style="font-size: 1.2rem">Quản lý trạm sạc xe điện</span> </h3>
+                    </div>
+                    <!-- start: login design -->
+                    <div class="card">
+                        <div class="header" style="padding: 10px 10px">
+                            <p class="lead">Đăng nhập vào hệ thống</p>
+                        </div>
+                        <div class="">
+                            <form asp-controller="Account" asp-action="Login" asp-route-returnurl="@ViewData["ReturnUrl"]" method="post" class="form-horizontal" role="form">
+                                    <hr />
+                                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                                    <div class="form-group">
+                                        <label asp-for="Username" class="col-md-12 control-label">@Localizer["Username"]</label>
+                                        <div class="col-md-12">
+                                            <input asp-for="Username" class="form-control" />
+                                            <span asp-validation-for="Username" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label asp-for="Password" class="col-md-12 control-label">@Localizer["Password"]</label>
+                                        <div class="col-md-12">
+                                            <input asp-for="Password" type="password" class="form-control" />
+                                            <span asp-validation-for="Password" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="col-md-offset-12 col-md-12">
+                                            <button type="submit" class="btn btn-primary" style="width:100%">@Localizer["Login"]</button>
+                                        </div>
+                                    </div>
+                                </form>
+                        </div>
+                    </div>
+
+                    @*<div class="row">
+                        <div class="col-md-8">
+                            <section>
+                                
+                            </section>
+                        </div>
+                    </div>*@
+                    <!-- end: login design -->
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END WRAPPER -->
+</body>
+
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

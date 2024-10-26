@@ -1,0 +1,71 @@
+﻿@model IEnumerable<FocusEV.OCPP.Management.ViewModels.DepositHistoryViewModel>
+
+@{
+    ViewData["Title"] = "Deposit History";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int maxPageLinks = 5; // Maximum number of page links to display
+}
+
+<div class="container-fluid">
+    <h2>Deposit History</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>User Name</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Gateway</th>
+                <th>Message</th>
+                <th>Date Created</th>
+                <th>Balance Before</th>
+                <th>Balance After</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.DepositHistoryId</td>
+                    <td>@item.UserName</td>
+                    <td>@item.Amount.ToString("N0", new System.Globalization.CultureInfo("vi-VN"))  VNĐ</td>
+                    <td>@item.Method</td>
+                    <td>@item.Gateway</td>
+                    <td>@item.Message</td>
+                    <td>@item.DateCreate.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    <td>@item.BalanceBeforeDeposit.ToString("N0", new System.Globalization.CultureInfo("vi-VN")) VNĐ </td>
+                    <td>@item.BalanceAfterDeposit.ToString("N0", new System.Globalization.CultureInfo("vi-VN")) VNĐ</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <nav aria-label="Page navigation" class="d-flex justify-content-center">
+        <ul class="pagination pagination-gray">
+            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                <a class="page-link" href="#" data-page="1">First</a>
+            </li>
+            @for (int i = Math.Max(1, currentPage - maxPageLinks / 2); i <= Math.Min(totalPages, currentPage + maxPageLinks / 2); i++)
+            {
+                <li class="page-item @(i == currentPage ? "active" : "")">
+                    <a class="page-link" href="#" data-page="@i">@i</a>
+                </li>
+            }
+            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                <a class="page-link" href="#" data-page="@totalPages">Last</a>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<script>
+    document.querySelectorAll('.pagination .page-link').forEach(function (link) {
+        link.addEventListener('click', function (event) {
+            event.preventDefault();
+            var page = this.getAttribute('data-page');
+            var url = '@Url.Action("Index", "DepositHistory")' + '?page=' + page;
+            window.location.href = url;
+        });
+    });
+</script>

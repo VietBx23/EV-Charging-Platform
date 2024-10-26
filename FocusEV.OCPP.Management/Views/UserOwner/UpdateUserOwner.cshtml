@@ -1,0 +1,282 @@
+﻿@model IEnumerable<FocusEV.OCPP.Database.UserApp>
+
+
+
+@{
+    ViewData["Title"] = "Update User Owner";
+    int currentPage = ViewBag.CurrentPage;
+    int totalPages = ViewBag.TotalPages;
+    int maxPageLinks = 5; // Maximum number of page links to display
+    string search = ViewBag.Search;
+}
+
+
+
+@section VendorCSS {
+    <link rel="stylesheet" href="~/vendor/bootstrap-multiselect/bootstrap-multiselect.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-colorpicker/css/bootstrap-colorpicker.css" />
+    <link rel="stylesheet" href="~/vendor/multi-select/css/multi-select.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.css">
+    <link rel="stylesheet" href="~/vendor/nouislider/nouislider.min.css" />
+    <link rel="stylesheet" href="~/vendor/select2/select2.css" />
+
+    <style>
+        .demo-card label {
+            display: block;
+            position: relative;
+        }
+
+        .demo-card .col-lg-4 {
+            margin-bottom: 30px;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <h2>Recharge</h2>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Phần Tìm Kiếm -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <strong>Chọn user : </strong>
+                    <select class="js-example-basic-single form-control" name="state" id="slaccount" style="margin-top:10px;">
+                        @if (ViewBag.Listuser != null)
+                        {
+                            foreach (FocusEV.OCPP.Database.UserApp item in ViewBag.Listuser)
+                            {
+                                <option value="@item.Id">@item.Fullname | @item.Email | Balance:  @item.Balance</option>
+                            }
+                        }
+
+                    </select>
+                </div>
+            </div>
+            <!-- Phần Nạp Tiền -->
+            <div class="col-md-6">
+                <div class="form-group">
+                    <strong>Amount to Recharge:</strong>
+                    <input id="ipbalance" placeholder="Tiền nạp" class="form-control" style="margin-top:10px;" />
+                </div>
+            </div>
+        </div>
+        <!-- Nút Nạp -->
+        <div class="row mt-1">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <a class="btn btn-primary" onclick="addDepositfree()" style="color:white;cursor:pointer;">
+                        Recharge
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Cập nhật User Owner -->
+    <h2>Update User </h2>
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success">@TempData["Message"]</div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <input type="text" id="searchInput" class="form-control mb-3" placeholder="Search by Fullname or Email" value="@ViewBag.Search" />
+
+    <table id="userapp-table" class="table table-striped">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Full Name</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null)
+            {
+                foreach (var user in Model)
+                {
+                    <tr>
+                        <td>@user.Email</td>
+                        <td>@user.Fullname</td>
+                        <td>
+                            <form asp-action="UpdateUserOwner" method="post">
+                                <input type="hidden" name="userId" value="@user.Id" />
+                                <button type="submit" class="btn btn-primary">Update Owner</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="3">No users available</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <nav aria-label="Page navigation" class="d-flex justify-content-center">
+        <ul class="pagination pagination-gray">
+            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                <a class="page-link" href="#" data-page="1">First</a>
+            </li>
+            @for (int i = Math.Max(1, currentPage - maxPageLinks / 2); i <= Math.Min(totalPages, currentPage + maxPageLinks / 2); i++)
+            {
+                <li class="page-item @(i == currentPage ? "active" : "")">
+                    <a class="page-link" href="#" data-page="@i">@i</a>
+                </li>
+            }
+            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                <a class="page-link" href="#" data-page="@totalPages">Last</a>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+
+
+    
+
+<script src="~/vendor/jquery/jquery-3.3.1.min.js"></script>
+@section Scripts {
+    <script src="~/vendor/bootstrap-colorpicker/js/bootstrap-colorpicker.js"></script> <!-- Bootstrap Colorpicker Js -->
+    <script src="~/vendor/jquery-inputmask/jquery.inputmask.bundle.js"></script> <!-- Input Mask Plugin Js -->
+    <script src="~/vendor/jquery.maskedinput/jquery.maskedinput.min.js"></script>
+    <script src="~/vendor/multi-select/js/jquery.multi-select.js"></script> <!-- Multi Select Plugin Js -->
+    <script src="~/vendor/bootstrap-multiselect/bootstrap-multiselect.js"></script>
+    <script src="~/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js"></script> <!-- Bootstrap Tags Input Plugin Js -->
+    <script src="~/vendor/nouislider/nouislider.js"></script> <!-- noUISlider Plugin Js -->
+
+    <script src="~/vendor/select2/select2.min.js"></script> <!-- Select2 Js -->
+
+    <script src="~/bundles/mainscripts.bundle.js"></script>
+    <script src="~/js/pages/forms/advanced-form-elements.js"></script>
+    <script src="~/bundles/knob.bundle.js"></script> <!-- Jquery Knob-->
+    <script src="~/js/widgets/infobox/infobox-1.js"></script>
+
+    <script src="~/bundles/datatablescripts.bundle.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/dataTables.buttons.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.bootstrap4.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.colVis.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.html5.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.print.min.js"></script>
+    <script src="~/vendor/sweetalert/sweetalert.min.js"></script> <!-- SweetAlert Plugin Js -->
+    <script src="~/js/pages/tables/jquery-datatable.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('.js-example-basic-single').select2();
+        });
+
+        function addDepositfree() {
+            if ($("#ipbalance").val() == "") {
+                alert("Vui lòng nhập số tiền");
+                $("#ipbalance").focus();
+                return;
+            }
+
+            var param = {
+                "Id": $("#slaccount").val(),
+                "balance": $("#ipbalance").val()
+            };
+
+            $.ajax({
+                url: '@Url.Action("AddDepositFree")',
+                dataType: 'html',
+                data: param,
+                type: "POST",
+                success: function (data, status, xhr) {
+                    if (data === "true") {
+                        alert("Nạp tiền thành công");
+                        location.reload();
+                    } else {
+                        alert("Nạp tiền thất bại");
+                    }
+                },
+                error: function (xhr, status, error) {
+                    alert(status);
+                }
+            });
+        }
+
+
+        document.getElementById('searchInput').addEventListener('input', function () {
+            const searchValue = this.value;
+            loadPage(1, searchValue);
+        });
+
+        document.querySelectorAll('.page-link').forEach(link => {
+            link.addEventListener('click', function (event) {
+                event.preventDefault();
+                const page = this.getAttribute('data-page');
+                const searchValue = document.getElementById('searchInput').value;
+                loadPage(page, searchValue);
+            });
+        });
+
+        function loadPage(page, search) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('page', page);
+            url.searchParams.set('search', search);
+
+            const tableBody = document.querySelector('tbody');
+            const pagination = document.querySelector('.pagination');
+
+            // Apply fade-out effect
+            tableBody.classList.add('fade-exit');
+            pagination.classList.add('fade-exit');
+
+            fetch(url.toString(), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newTableBody = doc.querySelector('tbody');
+                    const newPagination = doc.querySelector('.pagination');
+
+                    // Apply fade-in effect
+                    newTableBody.classList.add('fade-enter');
+                    newPagination.classList.add('fade-enter');
+
+                    tableBody.innerHTML = newTableBody.innerHTML;
+                    pagination.innerHTML = newPagination.innerHTML;
+
+                    // Trigger reflow to apply fade-in transition
+                    tableBody.offsetHeight;
+                    pagination.offsetHeight;
+
+                    // Remove fade-out and add fade-in classes
+                    tableBody.classList.remove('fade-exit');
+                    pagination.classList.remove('fade-exit');
+                    tableBody.classList.add('fade-enter-active');
+                    pagination.classList.add('fade-enter-active');
+
+                    // Re-bind event listeners for new page links
+                    document.querySelectorAll('.page-link').forEach(link => {
+                        link.addEventListener('click', function (event) {
+                            event.preventDefault();
+                            const page = this.getAttribute('data-page');
+                            const searchValue = document.getElementById('searchInput').value;
+                            loadPage(page, searchValue);
+                        });
+                    });
+                })
+                .finally(() => {
+                    setTimeout(() => {
+                        tableBody.classList.remove('fade-enter-active');
+                        pagination.classList.remove('fade-enter-active');
+                    }, 100); // Duration of the transition
+                });
+        }
+    </script>
+}

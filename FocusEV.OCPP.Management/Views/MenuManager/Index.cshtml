@@ -1,0 +1,167 @@
+﻿   @using Microsoft.AspNetCore.Mvc.Localization
+    @model MenuviewModel
+    @inject IViewLocalizer Localizer
+    @{
+        ViewData["Title"] = @Localizer["Menu Manager"];
+    }
+
+    @section VendorCSS {
+        <link rel="stylesheet" href="~/vendor/bootstrap-multiselect/bootstrap-multiselect.css">
+        <link rel="stylesheet" href="~/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css">
+        <link rel="stylesheet" href="~/vendor/bootstrap-colorpicker/css/bootstrap-colorpicker.css" />
+        <link rel="stylesheet" href="~/vendor/multi-select/css/multi-select.css">
+        <link rel="stylesheet" href="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.css">
+        <link rel="stylesheet" href="~/vendor/nouislider/nouislider.min.css" />
+        <link rel="stylesheet" href="~/vendor/select2/select2.css" />
+
+        <style>
+            .demo-card label {
+                display: block;
+                position: relative;
+            }
+
+            .demo-card .col-lg-4 {
+                margin-bottom: 30px;
+            }
+        </style>
+    }
+    <form method="post" enctype="multipart/form-data" asp-action="SaveAndUpdateMenuManager" asp-controller="MenuManager">
+        <div class="row clearfix">
+            <div class="col-lg-12 col-md-12">
+                <div class="card planned_task">
+                    <div class="body">
+                        <div class="row clearfix">
+                            <div class="col-lg-12">
+                                <input type="hidden" asp-for="MenuId" id="MenuId" name="MenuId" value="@Model.MenuId" />
+                            <div class="form-group">
+                                <label asp-for="Name">Tiêu Đề</label>
+                                <input required asp-for="Name" type="text" class="form-control" id="Name" name="Name" placeholder="Tiêu Đề" />
+                            </div>
+
+                                <div class="form-group">
+                                    <label asp-for="Href">Action</label>
+                                    <input required asp-for="Href" type="text" class="form-control" id="Href" name="Href" placeholder="URL Action" />
+                                </div>
+                                <div class="form-group">
+                                    <label asp-for="Icon">Icon</label>
+                                    <input asp-for="Icon" type="text" class="form-control" id="Icon" name="Icon" placeholder="Tên icon (ví dụ: fa-home)" />
+                                </div>
+                                <button type="submit" id="submitButton" class="btn btn-success" style="margin-right: 15px;">
+                                    <i class="fa fa-save"></i> <span id="buttonText">Lưu</span>
+                                </button>
+                                <button type="button" class="btn btn-warning" onclick="clearForm()">
+                                    <i class="fa fa-eraser"></i> <span>Clear</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-12 col-md-12">
+                <div class="card planned_task">
+                    <div class="header header2">
+                        <h2>DANH SÁCH MENU</h2>
+                    </div>
+                    <div class="body">
+                        <div class="table-responsive table-hover m-b-0 c_list myTable">
+                            <table class="table m-b-0">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Tiêu đề</th>
+                                        <th>Href</th>
+                                        <th>Icon</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.Menus != null && Model.Menus.Any())
+                                    {
+                                        foreach (var menu in Model.Menus)
+                                        {
+                                            <tr>
+                                                <td>@menu.MenuId</td>
+                                                <td>@menu.Name</td>
+                                                <td>@menu.Href</td>
+                                                <td>@menu.Icon</td>
+                                                <td>
+                                                    <a href="javascript:void(0);" onclick="editMenu(@menu.MenuId)" class="btn btn-warning">
+                                                        <i class="fa fa-edit"></i> Edit
+                                                    </a>
+                                                <a href="javascript:void(0);" onclick="deleteMenu(@menu.MenuId)" class="btn btn-danger">
+                                                    <i class="fa fa-trash"></i> Delete
+                                                </a>
+
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="5" class="text-center">No menus found.</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    @section Scripts {
+        <script>
+        function editMenu(menuId) {
+            $.ajax({
+                url: '@Url.Action("EditMenuManager", "MenuManager")', // Đổi "EditMenu" thành "EditMenuManager"
+                type: 'GET',
+                data: { id: menuId },
+                success: function (result) {
+                    $('#MenuId').val(result.menuId);
+                    $('#Name').val(result.name);
+                    $('#Href').val(result.href);
+                    $('#Icon').val(result.icon);
+
+                    $('#submitButton').removeClass('btn-success').addClass('btn-primary').text('Update');
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error retrieving menu data:', status, error);
+                }
+            });
+        }
+
+
+        function deleteMenu(menuId) {
+            if (confirm('Are you sure you want to delete this menu?')) {
+                $.ajax({
+                    url: '@Url.Action("DeleteMenuManager", "MenuManager")', // Đổi thành DeleteMenuManager
+                    type: 'POST',
+                    data: { id: menuId },
+                    success: function (response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function () {
+                        alert('Error deleting menu.');
+                    }
+                });
+            }
+        }
+
+       
+
+            function clearForm() {
+                $('#MenuId').val('');
+                $('#Name').val('');
+                $('#Href').val('');
+                $('#Icon').val('');
+                $('#submitButton').removeClass('btn-primary').addClass('btn-success').text('Lưu');
+            }
+        </script>
+    }

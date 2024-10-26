@@ -1,0 +1,162 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@model PermissionViewModel
+@inject IViewLocalizer Localizer
+@{
+    ViewData["Title"] = @Localizer["QL Tài khoản"];
+    ViewData["MainMenu"] = "Quản lý tài khoản";
+    //
+}
+
+@section VendorCSS {
+    <link rel="stylesheet" href="~/vendor/bootstrap-multiselect/bootstrap-multiselect.css">
+    <link rel="stylesheet" href="~/vendor/parsleyjs/css/parsley.css">
+
+    <style>
+        .fancy-checkbox label {
+            margin-bottom: 0px;
+        }
+    </style>
+}
+
+<div class="row clearfix">
+
+
+    <div class="col-lg-12 col-md-12">
+        <form method="post">
+            <div class="card planned_task">
+                <div class="body">
+                    <div class="row clearfix demo-masked-input">
+                        <div class="row col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                            <div class="col-lg-3 col-md-4">
+                                <div class="form-group">
+                                    <p>Tên group</p>
+                                    <input asp-for="@Model.Name" type="text" id="chargePointSerialNumber" class="form-control" placeholder="nhập tên nhóm">
+                                </div>
+                                <div class="form-group">
+                                    <p>Mô tả</p>
+                                    <textarea asp-for="@Model.Description" class="form-control" rows="4" cols="30" required="" spellcheck="false"></textarea>
+                                </div>
+                            </div>
+                            <div class="col-lg-5 col-md-6">
+                                <input asp-for="@Model.MenuID" />
+                                <div class="table-responsive table-hover m-b-0 c_list">
+                                    <table class="table m-b-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Chọn quyền</th>
+                                                <th>Tên moden</th>
+                                                @*  <th>Chỉ đọc</th>
+                                                <th>Được ghi</th>*@
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @{
+                                                if (ViewBag.ListMenu != null)
+                                                {
+                                                    foreach (var item in (IEnumerable<Menu>)ViewBag.ListMenu)
+                                                    {
+                                                        <tr>
+                                                            <td><div class="fancy-checkbox"><label><input onchange="changevl()" class="chkmenu" value="@item.MenuId" id="mn_@item.MenuId" type="checkbox"><span></span></label></div></td>
+                                                            <td>@item.Name</td>
+                                                        </tr>
+                                                    }
+                                                }
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <button type="submit" class="btn btn-success" style="margin-right: 15px;"><i class="fa fa-save"></i> <span>Save</span></button>
+                                <button type="button" class="btn btn-warning"><i class="fa fa-eraser"></i> <span>Clear</span></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+    </div>
+    <div class="col-lg-12 col-md-12">
+        <div class="card planned_task">
+            <div class="header header2">
+                <h2>DANH SÁCH TÀI KHOẢN</h2>
+            </div>
+            <div class="body">
+                <div class="table-responsive table-hover m-b-0 c_list myTable">
+                    <table class="table m-b-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Tên nhóm</th>
+                                <th>Mô tả nhóm</th>
+                                <th>Ngày tạo</th>
+                                <th>TDanh sách quyền</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Permissions != null)
+                            {
+                                foreach (var pm in Model.Permissions)
+                                {
+                                    <tr>
+                                        <td>@pm.PermissionId</td>
+                                        <td>@pm.Name</td>
+                                        <td>@pm.Description</td>
+                                        <td><span class="badge badge-info">@pm.CreateDate</span></td>
+                                        <td>@pm.MenuName</td>
+                                        <td>
+                                            <button data-href='@Url.Action("AccountGroup", Constants.AccoutManagerController, new { PermissionId = pm.PermissionId })' type="submit" class="btn btn-info edit" title="Edit"><i class="fa fa-edit"></i></button>
+                                            <button type="button" data-type="confirm" class="btn btn-danger js-sweetalert" title="Delete"><i class="fa fa-trash-o"></i></button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        $(function () {
+            $(".myTable").on("click", ".table tbody button.edit", function (e) {
+                window.location.href = $(this).data("href");
+
+            });
+            $(".myTable").on("click", ".table tbody button.delete", function (e) {
+                let text;
+                if (confirm("Delete Data!") == true) {
+                    window.location.href = $(this).data("href");
+                }
+            });
+        });
+        $(document).ready(function () {
+
+            var getMenu = $("#MenuID").val();
+            if (getMenu != "") {
+                var getsplit = getMenu.split(',');
+                for (i = 0; i < getsplit.length; i++) {
+                    if (getsplit[i] != "") {
+                        $("#mn_" + getsplit[i]).prop("checked", true);
+                    }
+                }
+            }
+        });
+        var getSelect = "";
+        function changevl() {
+            getSelect = "";
+            $(".chkmenu").each(function () {
+                var i = 0;
+                var data = $(this).val();
+                if ($(this).prop("checked") == true) {
+                    getSelect += data + ",";
+                }
+            });
+            $("#MenuID").val(getSelect);
+        }
+    </script>
+}

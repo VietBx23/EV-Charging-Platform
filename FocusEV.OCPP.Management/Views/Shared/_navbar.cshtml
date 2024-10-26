@@ -1,0 +1,23 @@
+﻿<navbar class="container-fluid">
+    <div class="navbar-btn">
+        <button type="button" class="btn-toggle-offcanvas"><i class="lnr lnr-menu fa fa-bars"></i></button>
+    </div>
+
+    <div class="navbar-brand">
+        <a asp-controller="Home" asp-action="Index"></a>
+    </div>
+
+    <div class="navbar-right">
+        <div id="isLogo" class="isLogo" style="float: left;    padding-top: 5px;">
+            <h2>FocusEV - Phần mềm quản lý trụ sạc</h2>
+        </div>
+
+        <div id="navbar-menu">
+            <ul class="nav navbar-nav">
+                <li>
+                    <a asp-controller="Account" asp-action="Logout" class="icon-menu"><i class="icon-login"></i></a>
+                </li>
+            </ul>
+        </div>
+    </div>  
+</navbar>

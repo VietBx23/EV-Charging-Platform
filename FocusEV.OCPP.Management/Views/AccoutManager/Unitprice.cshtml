@@ -1,0 +1,230 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@model UnitpriceViewModel
+@inject IViewLocalizer Localizer
+@{
+    ViewData["Title"] = @Localizer["Quản lý trạm sạc"];
+    ViewData["MainMenu"] = "Quản ly thiết bị";
+}
+
+@section VendorCSS {
+    <link rel="stylesheet" href="~/vendor/bootstrap-multiselect/bootstrap-multiselect.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-colorpicker/css/bootstrap-colorpicker.css" />
+    <link rel="stylesheet" href="~/vendor/multi-select/css/multi-select.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.css">
+    <link rel="stylesheet" href="~/vendor/nouislider/nouislider.min.css" />
+    <link rel="stylesheet" href="~/vendor/select2/select2.css" />
+
+    <style>
+        .demo-card label {
+            display: block;
+            position: relative;
+        }
+
+        .demo-card .col-lg-4 {
+            margin-bottom: 30px;
+        }
+    </style>
+}
+<form method="post">
+    <div class="row clearfix">
+
+        <div class="col-lg-12 col-md-12">
+            <div class="card planned_task">
+                <div class="body">
+                    <div class="row clearfix demo-masked-input">
+                        <div class="row col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                          
+                            <div class="col-lg-3 col-md-6 col-sm-12">
+                                <div class="form-group">
+                                    <p>Giá trên 1/Kw</p>
+                                    <input asp-for="@Model.UnitpriceId" type="hidden" class="form-control" />
+                                    <input asp-for="@Model.Price" type="text" id="chargeStationName" class="form-control" placeholder="nhập giá">
+                                </div>
+                            </div>
+                            <div class="col-lg-2 col-md-6 d-flex align-items-center">
+                                <button type="submit" class="btn btn-success" style="margin-right: 15px;"><i class="fa fa-save"></i> <span>Save</span></button>
+                                <button type="button" class="btn btn-warning"><i class="fa fa-eraser"></i> <span>Clear</span></button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-12 col-md-12">
+            <div class="card planned_task">
+                <div class="header header2">
+                    <h2>DANH SÁCH TRẠM SẠC ĐANG CÓ</h2>
+                </div>
+                <div class="body">
+                    <div class="table-responsive myTable">
+                        <table class="table m-b-0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Giá</th>
+                                    <th>
+                                            Trạng thái
+                                        </th>
+                                        <th>Ngày tạo</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.Unitprices != null)
+                                {
+                                    foreach (var cts in Model.Unitprices)
+                                    {
+                                        <tr>
+                                            <td>@cts.UnitpriceId</td>
+                                            <td><span>@cts.Price</span></td>
+                                            <th>
+                                                @if(cts.IsActive==1){
+                                                    <input onchange="changeip(@cts.UnitpriceId,this)" checked type="checkbox" id="switch_@cts.UnitpriceId" />
+
+                                                    <label for="switch_@cts.UnitpriceId">Toggle</label>
+                                                }
+                                              else{
+                                                    <input onchange="changeip(@cts.UnitpriceId,this)" id="switch_@cts.UnitpriceId" type="checkbox" />
+
+                                                    <label for="switch_@cts.UnitpriceId">Toggle</label>
+                                              }
+                                            </th>
+                                            <td><span class="text-info">@cts.CreateDate</span></td>
+                                            <td>
+                                                <button data-href='@Url.Action("DeleteUnitprice", Constants.AccoutManagerController, new { UnitpriceId = cts.UnitpriceId })' type="button" data-type="confirm" class="btn btn-danger js-sweetalert delete" title="Delete"><i class="fa fa-trash-o"></i></button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</form>
+
+
+<!-- Input Slider -->
+<div class="row clearfix">
+    <div class="col-lg-12 col-md-12 col-sm-12 hidden" style="display:none">
+        <div class="card">
+
+            <div class="body">
+                <div class="row clearfix">
+                    <div class="col-lg-6 col-md-12">
+                        <div id="nouislider_basic_example"></div>
+                    </div>
+                    <div class="col-lg-6 col-md-12">
+                        <div id="nouislider_range_example"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+
+    <script src="~/vendor/bootstrap-colorpicker/js/bootstrap-colorpicker.js"></script> <!-- Bootstrap Colorpicker Js -->
+    <script src="~/vendor/jquery-inputmask/jquery.inputmask.bundle.js"></script> <!-- Input Mask Plugin Js -->
+    <script src="~/vendor/jquery.maskedinput/jquery.maskedinput.min.js"></script>
+    <script src="~/vendor/multi-select/js/jquery.multi-select.js"></script> <!-- Multi Select Plugin Js -->
+    <script src="~/vendor/bootstrap-multiselect/bootstrap-multiselect.js"></script>
+    <script src="~/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js"></script> <!-- Bootstrap Tags Input Plugin Js -->
+    <script src="~/vendor/nouislider/nouislider.js"></script> <!-- noUISlider Plugin Js -->
+
+    <script src="~/vendor/select2/select2.min.js"></script> <!-- Select2 Js -->
+
+    <script src="~/bundles/mainscripts.bundle.js"></script>
+    <script src="~/js/pages/forms/advanced-form-elements.js"></script>
+    <script>
+        $(function () {
+            $(".myTable").on("click", ".table tbody button.edit", function (e) {
+                window.location.href = $(this).data("href");
+
+            });
+            $(".myTable").on("click", ".table tbody button.delete", function (e) {
+                let text;
+                if (confirm("Delete Data!") == true) {
+                    window.location.href = $(this).data("href");
+                }
+            });
+        });
+
+    </script>
+    <script>
+
+        function changeip(id,dis){
+            var param = {
+                "UnitpriceId": id,
+                "status":$(dis).prop("checked")
+            }
+            $.ajax({
+                url: '/AccoutManager/UpdateActive',
+                dataType: 'html',
+                data: param,
+                success: function (data, status, xhr) {
+                    window.location.reload();
+                },
+                error: function (xhr, status, error) {
+                    alert(status);
+                }
+            });
+        }
+    </script>
+}
+
+    <style>
+        input[type=checkbox] {
+            height: 0;
+            width: 0;
+            visibility: hidden;
+        }
+
+        label {
+            cursor: pointer;
+            text-indent: -9999px;
+            width: 70px;
+            height: 30px;
+            background: grey;
+            display: block;
+            border-radius: 100px;
+            position: relative;
+        }
+
+            label:after {
+                content: '';
+                position: absolute;
+                top: 5px;
+                left: 5px;
+                width: 20px;
+                height: 20px;
+                background: #fff;
+                border-radius: 90px;
+                transition: 0.3s;
+            }
+
+        input:checked + label {
+            background: #bada55;
+        }
+
+            input:checked + label:after {
+                left: calc(100% - 5px);
+                transform: translateX(-100%);
+            }
+
+        label:active:after {
+            width: 130px;
+        }
+         
+      
+    </style>

@@ -1,0 +1,85 @@
+﻿@model IEnumerable<FocusEV.OCPP.Database.ChargePointStatisticsViewModel>
+
+@{
+    ViewData["Title"] = "Charge Point Statistics";
+}
+
+<div class="container">
+    <form method="get" asp-controller="ChargePointManagement" asp-action="Index" class="form-inline">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-3 col-md-6">
+                    <div class="form-group">
+                        <label for="month">Month</label>
+                        <select id="month" name="month" class="form-control form-control-lg">
+                            @for (int i = 1; i <= 12; i++)
+                            {
+                                if (ViewBag.SelectedMonth != null && ViewBag.SelectedMonth == i)
+                                {
+                                    <option value="@i" selected>@i</option>
+                                }
+                                else
+                                {
+                                    <option value="@i">@i</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="form-group">
+                        <label for="year">Year</label>
+                        <select id="year" name="year" class="form-control form-control-lg">
+                            @for (int i = 2020; i <= DateTime.Now.Year; i++)
+                            {
+                                if (ViewBag.SelectedYear != null && ViewBag.SelectedYear == i)
+                                {
+                                    <option value="@i" selected>@i</option>
+                                }
+                                else
+                                {
+                                    <option value="@i">@i</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 align-self-end">
+                    <button type="submit" class="btn btn-primary btn-lg mb-2">Submit</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<table class="table mt-4">
+    <thead>
+        <tr>
+            <th>Charge Point ID</th>
+            <th>kWh Connector 1</th>
+            <th>kWh Connector 2</th>
+            <th>Total kWh Used</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Any())
+        {
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.ChargePointId</td>
+                    <!-- Format to 2 decimal places with specific culture -->
+                    <td>@item.kWh_Connector1.ToString("N1", new System.Globalization.CultureInfo("vi-VN"))</td>
+                    <td>@item.kWh_Connector2.ToString("N1", new System.Globalization.CultureInfo("vi-VN"))</td>
+                    <td>@item.Total_kWhUsed.ToString("N1", new System.Globalization.CultureInfo("vi-VN"))</td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="4" class="text-center">No data available for the selected month and year.</td>
+            </tr>
+        }
+    </tbody>
+</table>

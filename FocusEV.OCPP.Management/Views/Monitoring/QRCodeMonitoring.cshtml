@@ -1,0 +1,117 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@{
+    ViewData["Title"] = @Localizer["BẢN GHI Thanh toán nhận từ QRcode tĩnh"];
+    ViewData["MainMenu"] = "Giám sát";
+}
+
+@section VendorCSS {
+
+}
+    @using FocusEV.OCPP.Management.Models.Api
+    <div class="row clearfix">
+
+        <div class="col-lg-12 col-md-12">
+            <div class="card planned_task">
+                @*<div class="header header2">
+            <h2>LỊCH SỬ DÙNG THẺ TỪ</h2>
+            </div>*@
+                <div class="body">
+                    <div class="table-responsive">
+                        <table class="table m-b-0 table-striped table-hover" id="myTable">
+                            <thead>
+                                <tr>
+                                    <th>ID Trụ sạc yêu cầu</th>
+                                    <th>Súng yêu cầu</th>
+                                    <th>Mã QR TID</th>
+                                    <th>Số tiền thanh toán </th>
+                                    <th>Mã qrTrade</th>
+                                    <th>Mã TxnId</th>
+                                    <th>Ngày IPN</th>
+                                    <th>Địa chỉ nguồn</th>
+                                    <th>Trạng thái thanh toán</th>
+                                    <th>Số Đơn sạc kích hoạt</th>
+                                    <th>Mã phản hồi Vnpay</th>
+                                    <th>Nội dung phản hồi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @if (Model != null)
+                            {
+                                foreach (var item in (IEnumerable<QRCodeMonitor>)Model)
+                                {
+                                    <tr>
+                                        <td>@item.ConnectorStatus.ChargePointId</td>
+                                        <td>@item.ConnectorStatus.ConnectorId</td>
+                                        <td>@item.StaticQRIPNLog.terminalId</td>
+                                        <td>@item.StaticQRIPNLog.amount</td> 
+                                        <td><strong style="color: darkblue;">@item.StaticQRIPNLog.qrTrace</strong></td>
+                                        <td>@item.StaticQRIPNLog.txnId</td>
+                                        <td>@item.StaticQRIPNLog.payDate</td>
+                                        <td>@item.StaticQRIPNLog.address</td>
+                                        <td>
+                                            @if (item.StaticQRIPNLog.code == "00")
+                                            {
+                                                <strong class="text-primary">Thành công</strong>
+                                            }
+                                            else
+                                            {
+                                                @if (item.StaticQRIPNLog.code == "24")
+                                                {
+                                                    <strong class="text-danger">Đã hủy</strong>
+                                                }
+                                                else
+                                                {
+                                                    <strong class="text-danger">Thất bại</strong>
+                                                }
+                                            }
+                                        </td>
+                                        <td><strong style="color: brown;">@item.hasTransaction</strong></td>
+                                        <td>@item.StaticQRIPNLog.bankCode</td>
+                                        <td><strong style="color: forestgreen;font-size: 11px;">@item.StaticQRIPNLog.masterMerCode</strong></td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="~/vendor/jquery/jquery-3.3.1.min.js"></script>
+@section Scripts {
+    <script src="~/vendor/bootstrap-colorpicker/js/bootstrap-colorpicker.js"></script> <!-- Bootstrap Colorpicker Js -->
+    <script src="~/vendor/jquery-inputmask/jquery.inputmask.bundle.js"></script> <!-- Input Mask Plugin Js -->
+    <script src="~/vendor/jquery.maskedinput/jquery.maskedinput.min.js"></script>
+    <script src="~/vendor/multi-select/js/jquery.multi-select.js"></script> <!-- Multi Select Plugin Js -->
+    <script src="~/vendor/bootstrap-multiselect/bootstrap-multiselect.js"></script>
+    <script src="~/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js"></script> <!-- Bootstrap Tags Input Plugin Js -->
+    <script src="~/vendor/nouislider/nouislider.js"></script> <!-- noUISlider Plugin Js -->
+
+    <script src="~/vendor/select2/select2.min.js"></script> <!-- Select2 Js -->
+
+    <script src="~/bundles/mainscripts.bundle.js"></script>
+    <script src="~/js/pages/forms/advanced-form-elements.js"></script>
+    <script src="~/bundles/knob.bundle.js"></script> <!-- Jquery Knob-->
+    <script src="~/js/widgets/infobox/infobox-1.js"></script>
+
+    <script src="~/bundles/datatablescripts.bundle.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/dataTables.buttons.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.bootstrap4.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.colVis.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.html5.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.print.min.js"></script>
+    <script src="~/vendor/sweetalert/sweetalert.min.js"></script> <!-- SweetAlert Plugin Js -->
+    <script src="~/js/pages/tables/jquery-datatable.js"></script>
+}
+    <script>
+        $(document).ready(function () {
+            $('#myTable').DataTable({
+                ordering: false
+            });
+        });
+    </script>

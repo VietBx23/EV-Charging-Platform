@@ -1,0 +1,165 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@model MenuChildViewModel
+@inject IViewLocalizer Localizer
+@{
+    ViewData["Title"] = @Localizer["Menu Child Manager"];
+}
+
+@section VendorCSS {
+    <link rel="stylesheet" href="~/vendor/bootstrap-multiselect/bootstrap-multiselect.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-colorpicker/css/bootstrap-colorpicker.css" />
+    <link rel="stylesheet" href="~/vendor/multi-select/css/multi-select.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.css">
+    <link rel="stylesheet" href="~/vendor/nouislider/nouislider.min.css" />
+    <link rel="stylesheet" href="~/vendor/select2/select2.css" />
+
+    <style>
+        .demo-card label {
+            display: block;
+            position: relative;
+        }
+
+        .demo-card .col-lg-4 {
+            margin-bottom: 30px;
+        }
+    </style>
+}
+
+<form method="post" enctype="multipart/form-data" asp-action="SaveAndUpdateMenuChilds" asp-controller="MenuChildManager">
+    <div class="row clearfix">
+        <div class="col-lg-12 col-md-12">
+            <div class="card planned_task">
+                <div class="body">
+                    <div class="row clearfix">
+                        <div class="col-lg-12">
+                            <input type="hidden" asp-for="MenuchildId" id="MenuchildId" name="MenuchildId" value="@Model.MenuchildId" />
+                            <div class="form-group">
+                                <label asp-for="MenuChildName">Tiêu Đề</label>
+                                <input required asp-for="MenuChildName" type="text" class="form-control" id="MenuChildName" name="MenuChildName" placeholder="Tiêu Đề" />
+                            </div>
+
+                            <div class="form-group">
+                                <label asp-for="ParentId">ParentId</label>
+                                <input required asp-for="ParentId" type="number" class="form-control" id="ParentId" name="ParentId" placeholder="Parent Menu" />
+                            </div>
+                            <div class="form-group">
+                                <label asp-for="Url">URL</label>
+                                <input asp-for="Url" type="text" class="form-control" id="Url" name="Url" placeholder="URL" />
+                            </div>
+                            <button type="submit" id="submitButton" class="btn btn-success" style="margin-right: 15px;">
+                                <i class="fa fa-save"></i> <span id="buttonText">Lưu</span>
+                            </button>
+                            <button type="button" class="btn btn-warning" onclick="clearForm()">
+                                <i class="fa fa-eraser"></i> <span>Clear</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-12 col-md-12">
+            <div class="card planned_task">
+                <div class="header header2">
+                    <h2>DANH SÁCH MENU</h2>
+                </div>
+                <div class="body">
+                    <div class="table-responsive table-hover m-b-0 c_list myTable">
+                        <table class="table m-b-0">
+                            <thead>
+                                <tr>
+                           
+                                    <th>MenuChildId</th>
+                                    <th>MenuChildName</th>
+                                    <th>ParentId</th>
+                                    <th>URL</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.MenuChilds != null && Model.MenuChilds.Any())
+                                {
+                                    foreach (var menu in Model.MenuChilds)
+                                    {
+                                        <tr>
+                                            <td>@menu.MenuchildId</td>
+                                            <td>@menu.MenuChildName</td>
+                                            <td>@menu.ParentId</td>
+                                            <td>@menu.Url</td>
+                                            <td>
+                                                <a href="javascript:void(0);" onclick="editMenu(@menu.MenuchildId)" class="btn btn-warning">
+                                                    <i class="fa fa-edit"></i> Edit
+                                                </a>
+                                                <a href="javascript:void(0);" onclick="deleteMenu(@menu.MenuchildId)" class="btn btn-danger">
+                                                    <i class="fa fa-trash"></i> Delete
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center">No menus found.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        function editMenu(menuId) {
+            $.ajax({
+                url: '@Url.Action("EditMenuChild", "MenuChildManager")', // Updated action name
+                type: 'GET',
+                data: { id: menuId },
+                success: function (result) {
+                    $('#MenuchildId').val(result.menuchildId);
+                    $('#MenuChildName').val(result.menuChildName);
+                    $('#ParentId').val(result.parentId);
+                    $('#Url').val(result.url);
+
+                    $('#submitButton').removeClass('btn-success').addClass('btn-primary').text('Update');
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error retrieving menu data:', status, error);
+                }
+            });
+        }
+
+        function deleteMenu(menuId) {
+            if (confirm('Are you sure you want to delete this menu?')) {
+                $.ajax({
+                    url: '@Url.Action("DeleteMenuChild", "MenuChildManager")', // Updated action name
+                    type: 'POST',
+                    data: { id: menuId },
+                    success: function (response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function () {
+                        alert('Error deleting menu.');
+                    }
+                });
+            }
+        }
+
+        function clearForm() {
+            $('#MenuchildId').val('');
+            $('#MenuChildName').val('');
+            $('#ParentId').val('');
+            $('#Url').val('');
+            $('#submitButton').removeClass('btn-primary').addClass('btn-success').text('Lưu');
+        }
+    </script>
+}

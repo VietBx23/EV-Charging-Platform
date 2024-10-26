@@ -1,0 +1,120 @@
+﻿@model IEnumerable<FocusEV.OCPP.Management.Models.DailyConsumption>
+
+@{
+    ViewData["Title"] = "Daily Consumption";
+}
+
+<div class="container">
+    <form method="get" asp-controller="DailyConsumption" asp-action="Index" class="form-inline">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="form-group">
+                        <label for="chargePointId" class="mr-2">Trụ sạc</label>
+                        <select id="chargePointId" name="chargePointId" class="form-control form-control-lg">
+                            <option value="">Select Charge Point</option>
+                            @foreach (var point in ViewBag.ChargePoints)
+                            {
+                                if (ViewBag.ChargePointId != null && ViewBag.ChargePointId.ToString() == point.ToString())
+                                {
+                                    <option value="@point" selected>@point</option>
+                                }
+                                else
+                                {
+                                    <option value="@point">@point</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="form-group">
+                        <label for="month" class="mr-2">Tháng</label>
+                        <select id="month" name="month" class="form-control form-control-lg">
+                            @for (int i = 1; i <= 12; i++)
+                            {
+                                if (ViewBag.SelectedMonth != null && ViewBag.SelectedMonth == i)
+                                {
+                                    <option value="@i" selected>@i</option>
+                                }
+                                else
+                                {
+                                    <option value="@i">@i</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="form-group">
+                        <label for="year" class="mr-2">Năm</label>
+                        <select id="year" name="year" class="form-control form-control-lg">
+                            @for (int i = 2020; i <= DateTime.Now.Year; i++)
+                            {
+                                if (ViewBag.SelectedYear != null && ViewBag.SelectedYear == i)
+                                {
+                                    <option value="@i" selected>@i</option>
+                                }
+                                else
+                                {
+                                    <option value="@i">@i</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 align-self-end">
+                    <button type="submit" class="btn btn-primary btn-lg mb-2">Xem dữ liệu</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+
+
+</div>
+<form method="get" asp-controller="DailyConsumption" asp-action="ExportToExcel" class="form-inline">
+    <input type="hidden" name="chargePointId" value="@ViewBag.ChargePointId" />
+    <input type="hidden" name="month" value="@ViewBag.Month" />
+    <input type="hidden" name="year" value="@ViewBag.Year" />
+    <button type="submit" class="btn btn-success btn-lg mb-2">Export to Excel</button>
+</form>
+
+<table class="table mt-4">
+    <thead>
+        <tr>
+            <th>Charging Date</th>
+            <th>Start kWh (Sung 1)</th>
+            <th>End kWh (Sung 1)</th>
+            <th>Start kWh (Sung 2)</th>
+            <th>End kWh (Sung 2)</th>
+            <th>kWh Used (Sung 1)</th>
+            <th>kWh Used (Sung 2)</th>
+            <th>Total kWh Used</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.ChargingDate.ToShortDateString()</td>
+                    <td>@item.StartkWh_Sung1</td>
+                    <td>@item.EndkWh_Sung1</td>
+                    <td>@item.StartkWh_Sung2</td>
+                    <td>@item.EndkWh_Sung2</td>
+                    <td>@item.kWhUsed_Sung1.ToString("N1", new System.Globalization.CultureInfo("vi-VN"))</td>
+                    <td>@item.kWhUsed_Sung2.ToString("N1", new System.Globalization.CultureInfo("vi-VN"))</td>
+                    <td>@item.TotalkWhUsed.ToString("N1", new System.Globalization.CultureInfo("vi-VN"))</td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="8" class="text-center">No data available for the selected criteria.</td>
+            </tr>
+        }
+    </tbody>
+</table>

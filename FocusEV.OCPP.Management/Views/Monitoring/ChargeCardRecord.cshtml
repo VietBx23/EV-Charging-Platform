@@ -1,0 +1,135 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@{
+    ViewData["Title"] = @Localizer["BẢN GHI HOẠT ĐỘNG THẺ TỪ"];
+    ViewData["MainMenu"] = "Giám sát";
+}
+
+@section VendorCSS {
+
+}
+    @using FocusEV.OCPP.Management.Models.Api
+    <div class="row clearfix">
+
+        <div class="col-lg-12 col-md-12">
+            <div class="card planned_task">
+                @*<div class="header header2">
+            <h2>LỊCH SỬ DÙNG THẺ TỪ</h2>
+            </div>*@
+                <div class="body">
+                    <div class="table-responsive">
+                        <table class="table m-b-0 table-striped table-hover" id="myTable">
+                            <thead>
+                                <tr>
+                                    <th>TagID </th>
+                                    <th>TagName</th>
+                                    <th>
+                                        TagDescription
+                                    </th>
+                                    <th>Customer</th>
+                                    <th>ChargePointId</th>
+                                    <th>
+                                        ChargePointName
+                                    </th>
+                                    <th>Starttime</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @if (Model != null)
+                            {
+                                foreach (var item in (IEnumerable<api_Transaction>)Model)
+                                {
+                                    <tr>
+                                        @if (@item.ChargeTag != null)
+                                        {
+                                            <td>
+                                                @item.ChargeTag.TagId
+                                            </td>
+                                            <td><span class="badge badge-success">@item.ChargeTag.TagName</span></td>
+                                            <td><span class="badge badge-success">@item.ChargeTag.TagDescription</span></td>
+                                        }
+                                        else
+                                        {
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                        }
+
+
+                                        @if (item.Customer != null)
+                                        {
+                                            <td>@item.Customer.FirtName @item.Customer.LastName</td>
+                                        }
+                                        else
+                                        {
+                                            <td></td>
+                                        }
+
+                                        @if (item.ChargePoint != null)
+                                        {
+                                            <td>
+                                                @item.ChargePoint.ChargePointId
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-primary">@item.ChargePoint.Name</span>
+                                            </td>
+                                        }
+                                        else
+                                        {
+                                            <td>
+                                            </td>
+                                            <td>
+                                            </td>
+                                        }
+                                        <td>
+                                            <span class="badge badge-default">@((DateTime)item.Transaction.StartTime.AddHours(7))</span>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<script src="~/vendor/jquery/jquery-3.3.1.min.js"></script>
+@section Scripts {
+    <script src="~/vendor/bootstrap-colorpicker/js/bootstrap-colorpicker.js"></script> <!-- Bootstrap Colorpicker Js -->
+    <script src="~/vendor/jquery-inputmask/jquery.inputmask.bundle.js"></script> <!-- Input Mask Plugin Js -->
+    <script src="~/vendor/jquery.maskedinput/jquery.maskedinput.min.js"></script>
+    <script src="~/vendor/multi-select/js/jquery.multi-select.js"></script> <!-- Multi Select Plugin Js -->
+    <script src="~/vendor/bootstrap-multiselect/bootstrap-multiselect.js"></script>
+    <script src="~/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js"></script> <!-- Bootstrap Tags Input Plugin Js -->
+    <script src="~/vendor/nouislider/nouislider.js"></script> <!-- noUISlider Plugin Js -->
+
+    <script src="~/vendor/select2/select2.min.js"></script> <!-- Select2 Js -->
+
+    <script src="~/bundles/mainscripts.bundle.js"></script>
+    <script src="~/js/pages/forms/advanced-form-elements.js"></script>
+    <script src="~/bundles/knob.bundle.js"></script> <!-- Jquery Knob-->
+    <script src="~/js/widgets/infobox/infobox-1.js"></script>
+
+    <script src="~/bundles/datatablescripts.bundle.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/dataTables.buttons.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.bootstrap4.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.colVis.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.html5.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.print.min.js"></script>
+    <script src="~/vendor/sweetalert/sweetalert.min.js"></script> <!-- SweetAlert Plugin Js -->
+    <script src="~/js/pages/tables/jquery-datatable.js"></script>
+}
+    <script>
+        $(document).ready(function () {
+            $('#myTable').DataTable({
+                ordering: false
+            });
+        });
+    </script>

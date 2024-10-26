@@ -1,0 +1,168 @@
+﻿@model IEnumerable<FocusEV.OCPP.Database.ConnectorStatus>
+
+@{
+    ViewData["MainMenu"] = "Quản Lý Súng Sạc";
+}
+
+@section VendorCSS {
+    <link rel="stylesheet" href="~/vendor/bootstrap-multiselect/bootstrap-multiselect.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-colorpicker/css/bootstrap-colorpicker.css" />
+    <link rel="stylesheet" href="~/vendor/multi-select/css/multi-select.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.css">
+    <link rel="stylesheet" href="~/vendor/nouislider/nouislider.min.css" />
+    <link rel="stylesheet" href="~/vendor/select2/select2.css" />
+}
+
+<div class="container-fluid">
+    <h1>Connector Status</h1>
+
+    <!-- Form for Create/Update -->
+    <div class="form-container">
+        <form method="post" asp-action="CreateOrUpdate">
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="ChargePointId">Charge Point Id</label>
+                    <select class="form-control" id="ChargePointId" name="ChargePointId" required>
+                        <option value="">Select Charge Point Id</option>
+                        @foreach (var chargePointId in ViewBag.ChargePointIds as List<string>)
+                        {
+                            <option value="@chargePointId">@chargePointId</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="ConnectorId">Connector Id</label>
+                    <input type="text" class="form-control" id="ConnectorId" name="ConnectorId" required />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="ConnectorName">Connector Name</label>
+                    <input type="text" class="form-control" id="ConnectorName" name="ConnectorName" />
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="LastStatus">Last Status</label>
+                    <input type="text" class="form-control" id="LastStatus" name="LastStatus" />
+                </div>
+            </div>
+            @* Các trường khác bỏ qua để đơn giản hóa *@
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="TerminalId">Terminal Id</label>
+                    <input type="text" class="form-control" id="TerminalId" name="TerminalId" />
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary" id="create-button">Create</button>
+            <button type="submit" class="btn btn-success" id="update-button" style="display:none;">Update</button>
+        </form>
+    </div>
+
+  
+        <table class="table ">
+            <thead class="">
+                <tr>
+                    <th scope="col">Charge Point Id</th>
+                    <th scope="col">Connector Id</th>
+                    <th scope="col">Connector Name</th>
+                    <th scope="col">Last Status</th>
+                    <th scope="col">Last Status Time</th>
+                    <th scope="col">Last Meter</th>
+                    <th scope="col">Last Meter Time</th>
+                    <th scope="col">Last Seen</th>
+                    <th scope="col">Remote Time</th>
+                    <th scope="col">Last Meter Remote</th>
+                    <th scope="col">Terminal Id</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.ChargePointId</td>
+                        <td>@item.ConnectorId</td>
+                        <td>@item.ConnectorName</td>
+                        <td>@item.LastStatus</td>
+                        <td>@item.LastStatusTime</td>
+                        <td>@item.LastMeter</td>
+                        <td>@item.LastMeterTime</td>
+                        <td>@item.lastSeen</td>
+                        <td>@item.RemoteTime</td>
+                        <td>@item.LastMeterRemote</td>
+                        <td>@item.terminalId</td>
+                        <td>
+                            <a class="btn btn-warning" href="javascript:void(0);" onclick="editConnector('@item.ConnectorId', '@item.ChargePointId')">Edit</a> |
+                            <a class="btn btn-danger" href="javascript:void(0);" onclick="deleteConnector('@item.ConnectorId', '@item.ChargePointId')">Delete</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/vendor/bootstrap-colorpicker/js/bootstrap-colorpicker.js"></script>
+    <script src="~/vendor/jquery-inputmask/jquery.inputmask.bundle.js"></script>
+    <script src="~/vendor/jquery.maskedinput/jquery.maskedinput.min.js"></script>
+    <script src="~/vendor/multi-select/js/jquery.multi-select.js"></script>
+    <script src="~/vendor/bootstrap-multiselect/bootstrap-multiselect.js"></script>
+    <script src="~/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js"></script>
+    <script src="~/vendor/nouislider/nouislider.js"></script>
+    <script src="~/vendor/select2/select2.min.js"></script>
+    <script src="~/bundles/mainscripts.bundle.js"></script>
+    <script src="~/js/pages/forms/advanced-form-elements.js"></script>
+
+    <script type="text/javascript">
+        function editConnector(connectorId, chargePointId) {
+            $.get('@Url.Action("GetConnectorStatus", "StatusConnector")', { connectorId: connectorId, chargePointId: chargePointId }, function (data) {
+                if (data) {
+                    $('#ChargePointId').val(data.chargePointId);
+                    $('#ConnectorId').val(data.connectorId);
+                    $('#ConnectorName').val(data.connectorName);
+                    $('#LastStatus').val(data.lastStatus);
+                    $('#LastStatusTime').val(data.lastStatusTime);
+                    $('#LastMeter').val(data.lastMeter);
+                    $('#LastMeterTime').val(data.lastMeterTime);
+                    $('#LastSeen').val(data.lastSeen);
+                    $('#RemoteTime').val(data.remoteTime);
+                    $('#LastMeterRemote').val(data.lastMeterRemote);
+                    $('#TerminalId').val(data.terminalId);
+
+                    // Show the update button and hide the create button
+                    $('#create-button').hide();
+                    $('#update-button').show();
+                }
+            });
+        }
+
+        function deleteConnector(connectorId, chargePointId) {
+            if (confirm('Are you sure you want to delete this item?')) {
+                $.ajax({
+                    url: '@Url.Action("Delete", "StatusConnector")',
+                    type: 'POST',
+                    data: {
+                        connectorId: connectorId,
+                        chargePointId: chargePointId
+                    },
+                    success: function (result) {
+                        if (result.success) {
+                            // Remove the row from the table
+                            $('tr').filter(function () {
+                                return $(this).find('td').eq(1).text() === connectorId && $(this).find('td').eq(0).text() === chargePointId;
+                            }).remove();
+                        } else {
+                            alert('Failed to delete item');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error:', error);
+                        alert('An error occurred while deleting the item');
+                    }
+                });
+            }
+        }
+    </script>
+}

@@ -1,0 +1,17 @@
+﻿@{
+    if (Model != null)
+    {
+        var i = 0;
+        <option value="0">Tất cả trạm sạc</option>
+        foreach (var item in (IEnumerable<ChargeStation>)Model)
+        {
+            if(i==0){
+                <option value="@item.ChargeStationId" selected>@item.Name</option>
+            }
+            else{
+                <option value="@item.ChargeStationId">@item.Name</option>
+            }
+            i++;
+        }
+    }
+}

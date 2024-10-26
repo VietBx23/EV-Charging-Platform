@@ -1,0 +1,9 @@
+﻿<ul>
+    @if(Model!=null){
+        foreach (var item in (IEnumerable<MenuChild>)Model)
+        {
+            <li><a href="@item.Url">@item.MenuChildName</a></li>
+        }
+    }
+</ul>
+ 

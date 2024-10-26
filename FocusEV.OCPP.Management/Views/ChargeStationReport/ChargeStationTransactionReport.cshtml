@@ -1,0 +1,80 @@
+﻿@model IEnumerable<FocusEV.OCPP.Management.Models.ChargeStationTransactionSummary>
+
+@{
+    ViewBag.Title = "Charge Station Report";
+}
+
+<div class="container-fluid">
+ 
+
+    <!-- Form để chọn tháng và năm -->
+    <form method="get" asp-action="ChargeStationTransactionReport">
+        <div class="row">
+            <div class="col-lg-3 col-md-6">
+                <div class="form-group">
+                    <label for="month">Month</label>
+                    <select id="month" name="month" class="form-control form-control-lg">
+                        @for (int i = 1; i <= 12; i++)
+                        {
+                            if (ViewBag.SelectedMonth != null && ViewBag.SelectedMonth == i)
+                            {
+                                <option value="@i" selected>@i</option>
+                            }
+                            else
+                            {
+                                <option value="@i">@i</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <div class="form-group">
+                    <label for="year">Year</label>
+                    <select id="year" name="year" class="form-control form-control-lg">
+                        @for (int i = 2020; i <= DateTime.Now.Year; i++)
+                        {
+                            if (ViewBag.SelectedYear != null && ViewBag.SelectedYear == i)
+                            {
+                                <option value="@i" selected>@i</option>
+                            }
+                            else
+                            {
+                                <option value="@i">@i</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+
+    <!-- Bảng dữ liệu thống kê -->
+    <table class="table table-striped mt-4">
+        <thead>
+            <tr>
+                <th>Tên Trạm Sạc</th>
+                <th>Tổng Số Lần Sạc </th>
+                <th>Tổng Số Lần Sạc Lado </th>
+                <th>Tổng Số lần Sạc Focus</th>
+                <th>Tổng Số Lần Sạc Khách Lạ</th>
+                <th>Tổng Số Lần Sạc Thẻ Từ</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.ChargeStationName</td>
+                    <td>@item.TotalTransactions</td>
+                    <td>@item.LadoUseMobileTransactions</td>
+                    <td>@item.FocusUserTransactions</td>
+                    <td>@item.GuestUserTransactions</td>
+                    <td>@item.LadoCardUserTransactions</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,163 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@model ConnectorStatusViewModel
+@inject IViewLocalizer Localizer
+
+@{
+    ViewData["Title"] = Localizer["Connector Status"];
+    ViewData["MainMenu"] = "Manage Connectors";
+}
+
+
+@section VendorCSS {
+    <link rel="stylesheet" href="~/vendor/bootstrap-multiselect/bootstrap-multiselect.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-colorpicker/css/bootstrap-colorpicker.css" />
+    <link rel="stylesheet" href="~/vendor/multi-select/css/multi-select.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.css">
+    <link rel="stylesheet" href="~/vendor/nouislider/nouislider.min.css" />
+    <link rel="stylesheet" href="~/vendor/select2/select2.css" />
+    <link rel="stylesheet" href="~/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css">
+    <style>
+        .demo-card label {
+            display: block;
+            position: relative;
+        }
+    </style>
+}
+
+@* <form method="post">
+    <div class="row clearfix">
+        <div class="col-lg-12 col-md-12">
+            <div class="card planned_task">
+                <div class="body">
+                    <div class="row clearfix demo-masked-input">
+                        <div class="col-lg-4">
+                            <div class="form-group">
+                                <label asp-for="ChargePointId">@Localizer["Charge Point ID"]</label>
+                                <input asp-for="ChargePointId" class="form-control" placeholder="Enter Charge Point ID" />
+                                <span asp-validation-for="ChargePointId" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="form-group">
+                                <label asp-for="ConnectorName">@Localizer["Connector Name"]</label>
+                                <input asp-for="ConnectorName" class="form-control" placeholder="Enter Connector Name" />
+                                <span asp-validation-for="ConnectorName" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="form-group">
+                                <label asp-for="LastStatus">@Localizer["Last Status"]</label>
+                                <input asp-for="LastStatus" class="form-control" placeholder="Enter Last Status" />
+                                <span asp-validation-for="LastStatus" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row clearfix demo-masked-input">
+                        <div class="col-lg-4">
+                            <div class="form-group">
+                                <label asp-for="LastStatusTime">@Localizer["Last Status Time"]</label>
+                                <input asp-for="LastStatusTime" class="form-control" type="datetime-local" />
+                                <span asp-validation-for="LastStatusTime" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="form-group">
+                                <label asp-for="LastMeter">@Localizer["Last Meter"]</label>
+                                <input asp-for="LastMeter" class="form-control" placeholder="Enter Last Meter" />
+                                <span asp-validation-for="LastMeter" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="form-group">
+                                <label asp-for="LastMeterTime">@Localizer["Last Meter Time"]</label>
+                                <input asp-for="LastMeterTime" class="form-control" type="datetime-local" />
+                                <span asp-validation-for="LastMeterTime" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mt-3">
+                        <button type="submit" class="btn btn-success mr-2"><i class="fa fa-save"></i> @Localizer["Save"]</button>
+                        <a asp-action="Index" class="btn btn-secondary"><i class="fa fa-arrow-left"></i> @Localizer["Back to List"]</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-12 col-md-12">
+            <div class="card planned_task">
+                <div class="header">
+                    <h2>@Localizer["Connector Statuses"]</h2>
+                </div>
+                <div class="body">
+                    @if (Model.ConnectorStatuses != null && Model.ConnectorStatuses.Any())
+                    {
+                        <div class="table-responsive myTable">
+                            <table class="table table-hover m-b-0">
+                                <thead>
+                                    <tr>
+                                        <th>@Localizer["Connector ID"]</th>
+                                        <th>@Localizer["Charge Point ID"]</th>
+                                        <th>@Localizer["Last Status"]</th>
+                                        <th>@Localizer["Last Status Time"]</th>
+                                        <th>@Localizer["Last Meter"]</th>
+                                        <th>@Localizer["Last Meter Time"]</th>
+                                        <th>@Localizer["Actions"]</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var status in Model.ConnectorStatuses)
+                                    {
+                                        <tr>
+                                            <td>@status.ConnectorId</td>
+                                            <td>@status.ChargePointId</td>
+                                            <td>@status.LastStatus</td>
+                                            <td>@status.LastStatusTime</td>
+                                            <td>@status.LastMeter</td>
+                                            <td>@status.LastMeterTime</td>
+                                            <td>
+                                                <a asp-action="ConnectorStatus" asp-route-connectorStatusId="@status.ConnectorId" class="btn btn-warning">@Localizer["Edit"]</a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p>@Localizer["No connector statuses found."]</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</form> *@
+@section Scripts {
+    <script src="~/vendor/bootstrap-colorpicker/js/bootstrap-colorpicker.js"></script> <!-- Bootstrap Colorpicker Js -->
+    <script src="~/vendor/jquery-inputmask/jquery.inputmask.bundle.js"></script> <!-- Input Mask Plugin Js -->
+    <script src="~/vendor/jquery.maskedinput/jquery.maskedinput.min.js"></script>
+    <script src="~/vendor/multi-select/js/jquery.multi-select.js"></script> <!-- Multi Select Plugin Js -->
+    <script src="~/vendor/bootstrap-multiselect/bootstrap-multiselect.js"></script>
+    <script src="~/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js"></script> <!-- Bootstrap Tags Input Plugin Js -->
+    <script src="~/vendor/nouislider/nouislider.js"></script> <!-- noUISlider Plugin Js -->
+    <script src="~/vendor/select2/select2.min.js"></script> <!-- Select2 Js -->
+    <script src="~/bundles/mainscripts.bundle.js"></script>
+    <script src="~/js/pages/forms/advanced-form-elements.js"></script>
+<script>
+    $(function () {
+        $(".myTable").on("click", ".table tbody button.edit", function (e) {
+            window.location.href = $(this).data("href");
+
+        });
+        $(".myTable").on("click", ".table tbody button.delete", function (e) {
+            let text;
+            if (confirm("Delete Data!") == true) {
+                window.location.href = $(this).data("href");
+            }
+        });
+    });
+
+</script>
+}

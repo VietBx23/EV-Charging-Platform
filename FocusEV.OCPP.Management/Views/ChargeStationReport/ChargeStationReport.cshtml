@@ -1,0 +1,274 @@
+﻿@model ChargeStationReportModel
+@{
+    ViewData["Title"] = "Charge Station Report";
+}
+
+<div class="container-fluid">
+    <form method="get" asp-action="ChargeStationReport">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-3 col-md-6">
+                    <div class="form-group">
+                        <label for="startDate">Ngày Bắt Đầu</label>
+                        <input type="date" id="startDate" name="startDate" class="form-control form-control-lg"
+                               min="2020-01-01" max="@DateTime.Now.ToString("yyyy-MM-dd")"
+                               value="@ViewBag.SelectedStartDate" oninput="toggleMonthYear()" />
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="form-group">
+                        <label for="endDate">Ngày Kết Thúc</label>
+                        <input type="date" id="endDate" name="endDate" class="form-control form-control-lg"
+                               min="2020-01-01" max="@DateTime.Now.ToString("yyyy-MM-dd")"
+                               value="@ViewBag.SelectedEndDate" oninput="toggleMonthYear()" />
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6" id="monthSelect">
+                    <div class="form-group">
+                        <label for="month">Tháng</label>
+                        <select id="month" name="month" class="form-control form-control-lg">
+                            @for (int i = 1; i <= 12; i++)
+                            {
+                                if (ViewBag.SelectedMonth != null && ViewBag.SelectedMonth == i)
+                                {
+                                    <option value="@i" selected>@i</option>
+                                }
+                                else
+                                {
+                                    <option value="@i">@i</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6" id="yearSelect">
+                    <div class="form-group">
+                        <label for="year">Năm</label>
+                        <select id="year" name="year" class="form-control form-control-lg">
+                            @for (int i = 2020; i <= DateTime.Now.Year; i++)
+                                if (ViewBag.SelectedYear != null && ViewBag.SelectedYear == i)
+                                {
+                                    <option value="@i" selected>@i</option>
+                                }
+                                else
+                                {
+                                    <option value="@i">@i</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6 align-self-end">
+                    <button type="submit" class="btn btn-outline-success btn-lg mb-3">Tìm Kiếm</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+
+
+ 
+
+
+<!-- Transaction Summary -->
+<div class="container-fluid mt-2">
+ 
+    <table class="table table-striped table-bordered">
+        <thead class="thead-success">
+            <tr>
+                <th>Tên Trạm Sạc</th>
+                <th>Tổng Lượt Sạc</th>
+                <th>Tổng Lượt Sạc Lado Mobile</th>
+                <th>Tổng Lượt Sạc Focus Mobile</th>
+                <th>Tổng Lượt Sạc Khác Lạ</th>
+                <th>Tổng Lượt Sạc Thẻ Từ  </th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                // Khai báo các biến để lưu trữ tổng số
+                var totalTransactions = 0;
+                var totalLadoMobile = 0;
+                var totalFocus = 0;
+                var totalGuest = 0;
+                var totalLadoCard = 0;
+            }
+            @foreach (var summary in Model.TransactionSummaries)
+            {
+                totalTransactions += summary.TotalTransactions;
+                totalLadoMobile += summary.LadoUseMobileTransactions;
+                totalFocus += summary.FocusUserTransactions;
+                totalGuest += summary.GuestUserTransactions;
+                totalLadoCard += summary.LadoCardUserTransactions;
+
+                <tr>
+                    <td><span class="badge badge-success text-dark">@summary.ChargeStationName</span></td>
+                    <td><span class="badge badge-success text-dark  ">@summary.TotalTransactions</span></td>
+                  
+                    <td><span class="badge badge-success text-dark "> @summary.LadoUseMobileTransactions</span></td>
+                    <td><span class="badge badge-success text-dark "> @summary.FocusUserTransactions</span></td>
+                    <td><span class="badge badge-success text-dark ">@summary.GuestUserTransactions</span></td>
+                    <td><span class="badge badge-success text-dark ">@summary.LadoCardUserTransactions</span></td>
+                </tr>
+            
+            }
+            <tr>
+                <td><strong>Tổng cộng</strong></td>
+                <td><span class="badge badge-danger">@totalTransactions</span></td>
+                <td><span class="badge badge-danger">@totalLadoMobile</span></td>
+                <td><span class="badge badge-danger">@totalFocus</span></td>
+                <td><span class="badge badge-danger">@totalGuest</span></td>
+                <td><span class="badge badge-danger">@totalLadoCard</span></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- KWh Summary -->
+<div class="container-fluid mt-5">
+
+    <table class="table table-striped table-bordered">
+        <thead class="thead-success">
+            <tr>
+                <th>Tên Trạm Sạc</th>
+                <th>Tổng Kw Tiêu Thụ</th>
+                <th>Tổng Kw Tiêu Thụ Lado Mobile</th>
+                <th>Tổng Kw Tiêu Thụ Focus Mobile </th>
+                <th>Tổng Kw Tiêu Thu Khách Lạ</th>
+                <th>Tổng KW Tiêu Thụ Thẻ Từ </th>
+            </tr>
+        </thead>
+       @{
+    // Khai báo các biến để lưu trữ tổng số kWh
+    var totalKWhByStation = 0.0;
+    var totalKWhLadoMobile = 0.0;
+    var totalKWhFocus = 0.0;
+    var totalKWhGuest = 0.0;
+    var totalKWhLadoCard = 0.0;
+}
+
+<tbody>
+    @foreach (var summary in Model.KWhSummaries)
+    {
+        // Cộng dồn các giá trị kWh
+        totalKWhByStation += summary.TotalKWhConsumedByStation;
+        totalKWhLadoMobile += summary.TotalKWhLadoMobile;
+        totalKWhFocus += summary.TotalKWhFocus;
+        totalKWhGuest += summary.TotalKWhGuest;
+        totalKWhLadoCard += summary.TotalKWhLadoCard;
+
+        <tr>
+            <td><span class="badge badge-success text-dark">@summary.ChargeStationName</span></td>
+            <td><span class="badge badge-success text-dark ">@summary.TotalKWhConsumedByStation KW</span></td>
+            <td><span class="badge badge-success text-dark ">@summary.TotalKWhLadoMobile KW</span></td>
+            <td><span class="badge badge-success text-dark ">@summary.TotalKWhFocus KW</span></td>
+            <td><span class="badge badge-success text-dark ">@summary.TotalKWhGuest KW</span></td>
+            <td><span class="badge badge-success text-dark ">@summary.TotalKWhLadoCard KW</span></td>
+        </tr>
+    }
+    
+    <!-- Hiển thị tổng cộng kWh ở dưới cùng -->
+            <tr>
+                <td><strong>Tổng cộng</strong></td>
+                <td><span class="badge badge-danger">@totalKWhByStation.ToString("N2") KW</span></td>
+                <td><span class="badge badge-danger">@totalKWhLadoMobile.ToString("N2") KW</span></td>
+                <td><span class="badge badge-danger">@totalKWhFocus.ToString("N2") KW</span></td>
+                <td><span class="badge badge-danger">@totalKWhGuest.ToString("N2") KW</span></td>
+                <td><span class="badge badge-danger">@totalKWhLadoCard.ToString("N2") KW</span></td>
+            </tr>
+
+</tbody>
+
+    </table>
+</div>
+
+<!-- Amount Summary -->
+<div class="container-fluid mt-5">
+  
+    <table class="table table-striped table-bordered">
+        <thead class="thead-success">
+            <tr>
+                <th>Tên Trạm Sạc</th>
+                <th>Tổng Tiền </th>
+                <th>Tổng Tiền Sạc Lado Mobile </th>
+                <th>Tổng Tiền Sạc Focus Mobile</th>
+                <th>Tổng Tiền Sạc Khách Lạ</th>
+                <th>Tổng Tiền Sạc Thẻ Từ</th>
+            </tr>
+        </thead>
+        @{
+            // Khai báo các biến để lưu tổng số tiền cho từng nhóm
+            decimal totalAmount = 0;
+            decimal totalAmountLadoMobile = 0;
+            decimal totalAmountFocus = 0;
+            decimal totalAmountGuest = 0;
+            decimal totalAmountLadoCard = 0;
+
+            // Hàm để chuyển đổi chuỗi từ định dạng tiền tệ sang số thực
+            Func<string, decimal> ConvertToDecimal = (string value) =>
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    return 0;
+                }
+                // Loại bỏ "VNĐ" và dấu chấm (.)
+                value = value.Replace("VNĐ", "").Replace(".", "").Trim();
+                // Chuyển thành decimal
+                return decimal.TryParse(value, out decimal result) ? result : 0;
+            };
+        }
+
+        <tbody>
+            @foreach (var summary in Model.AmountSummaries)
+            {
+                // Cộng dồn các giá trị sau khi chuyển đổi từ chuỗi sang số
+                totalAmount += ConvertToDecimal(summary.TotalAmount);
+                totalAmountLadoMobile += ConvertToDecimal(summary.TotalAmountLadoMobile);
+                totalAmountFocus += ConvertToDecimal(summary.TotalAmountFocus);
+                totalAmountGuest += ConvertToDecimal(summary.TotalAmountGuest);
+                totalAmountLadoCard += ConvertToDecimal(summary.TotalAmountLadoCard);
+
+                <tr>
+                    <td><span class="badge badge-success text-dark">@summary.ChargeStationName</span></td>
+                    <td><span class="badge badge-success text-dark">@summary.TotalAmount</span></td>
+                    <td><span class="badge badge-success text-dark">@summary.TotalAmountLadoMobile</span></td>
+                    <td><span class="badge badge-success text-dark">@summary.TotalAmountFocus</span></td>
+                    <td><span class="badge badge-success text-dark">@summary.TotalAmountGuest</span></td>
+                    <td><span class="badge badge-success text-dark">@summary.TotalAmountLadoCard</span></td>
+                </tr>
+            }
+
+            <!-- Hiển thị tổng cộng sau khi cộng dồn -->
+            <tr>
+                <td><strong>Tổng cộng</strong></td>
+                <td><span class="badge badge-danger">@totalAmount.ToString("N0") VNĐ</span></td>
+                <td><span class="badge badge-danger">@totalAmountLadoMobile.ToString("N0") VNĐ</span></td>
+                <td><span class="badge badge-danger">@totalAmountFocus.ToString("N0") VNĐ</span></td>
+                <td><span class="badge badge-danger">@totalAmountGuest.ToString("N0") VNĐ</span></td>
+                <td><span class="badge badge-danger">@totalAmountLadoCard.ToString("N0") VNĐ</span></td>
+            </tr>
+        </tbody>
+
+    </table>
+</div>
+<script>
+    function toggleMonthYear() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const monthSelect = document.getElementById('monthSelect');
+        const yearSelect = document.getElementById('yearSelect');
+
+        if (startDate || endDate) {
+            monthSelect.style.display = 'none';
+            yearSelect.style.display = 'none';
+        } else {
+            monthSelect.style.display = 'block';
+            yearSelect.style.display = 'block';
+        }
+    }
+</script>

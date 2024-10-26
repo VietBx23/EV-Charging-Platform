@@ -1,0 +1,347 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@model AccountViewModel
+@inject IViewLocalizer Localizer
+@{
+    ViewData["Title"] = @Localizer["Thông tin tài khoản"];
+    ViewData["MainMenu"] = "Quản lý tài khoản";
+    //
+}
+
+@section VendorCSS {
+    <link rel="stylesheet" href="~/vendor/bootstrap-multiselect/bootstrap-multiselect.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-colorpicker/css/bootstrap-colorpicker.css" />
+    <link rel="stylesheet" href="~/vendor/multi-select/css/multi-select.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.css">
+    <link rel="stylesheet" href="~/vendor/nouislider/nouislider.min.css" />
+    <link rel="stylesheet" href="~/vendor/select2/select2.css" />
+
+    <style>
+        .demo-card label {
+            display: block;
+            position: relative;
+        }
+
+        .demo-card .col-lg-4 {
+            margin-bottom: 30px;
+        }
+    </style>
+}
+<form method="post">
+    <div class="row clearfix">
+        <div class="col-lg-12 col-md-12">
+            <div class="card planned_task">
+                <div class="body">
+                    <div class="row clearfix demo-masked-input">
+                        <div class="row col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                            <div class="col-lg-2 col-md-4">
+                                <div class="media">
+                                    <div class="media-left m-r-15">
+                                        @{
+                                            if (Model.Images != null)
+                                            {
+                                                <img src="/images/Account/@Model.Images" ser-photo media-object" alt="User"
+                                                    id="filePhotoAvatar" style="width: 100%;">
+                                            }
+                                            else
+                                            {
+                                                <img src="~/images/user.png" class="user-photo media-object" alt="User"
+                                                    id="filePhotoAvatar" style="width: 100%;">
+                                            }
+                                        }
+
+                                    </div>
+                                    <div class="media-body">
+                                        <p>
+                                            Upload your photo.
+                                        </p>
+                                        <button type="button" class="btn btn-default-dark" id="btn-upload-photo">Upload
+                                            Photo</button>
+                                        <input onchange="ChangeImg()" type="file" id="fileUpload" class="sr-only">
+                                        <input asp-for="@Model.Images" type="hidden" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row col-lg-10 col-md-8">
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="icon-user"></i></span>
+                                            </div>
+                                            <input required asp-for="@Model.Name" type="text" class="form-control"
+                                                placeholder="Full name">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="icon-user"></i></span>
+                                            </div>
+                                            <input required asp-for="@Model.UserName" type="text" class="form-control"
+                                                placeholder="User name">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="icon-shield"></i></span>
+                                            </div>
+                                            <input asp-for="@Model.Password" type="password" class="form-control"
+                                                placeholder="Mật khẩu">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="icon-shield"></i></span>
+                                            </div>
+                                            <input type="password" class="form-control" placeholder="Xác nhận mật khẩu">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="icon-film"></i></span>
+                                            </div>
+                                            <input asp-for="@Model.Code" type="text" id="systemCode"
+                                                class="form-control" placeholder="Mã code hệ thống">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="icon-layers"></i></span>
+                                            </div>
+                                            <select required asp-for="@Model.DepartmentId"
+                                                class="form-control show-tick ms search-select"
+                                                data-placeholder="Chọn phòng ban">
+                                                @if (ViewBag.ListDapartment != null)
+                                                {
+                                                    <option></option>
+                                                    foreach (var item in (IEnumerable<Department>)ViewBag.ListDapartment)
+                                                    {
+                                                        <option value="@item.DepartmentId">
+                                                            @item.DepartmentName
+                                                        </option>
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6">
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="icon-users"></i></span>
+                                            </div>
+                                            <select required asp-for="@Model.PermissionId"
+                                                class="form-control show-tick ms search-select"
+                                                data-placeholder="Chọn nhóm tài khoản">
+                                                @if (ViewBag.ListPermission != null)
+                                                {
+                                                    <option></option>
+                                                    foreach (var item in (IEnumerable<Permission>)ViewBag.ListPermission)
+                                                    {
+                                                        <option value="@item.PermissionId">
+                                                            @item.Name
+                                                        </option>
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6">
+                                    <button type="submit" class="btn btn-success" style="margin-right: 15px;"><i
+                                            class="fa fa-save"></i> <span>Save</span></button>
+                                    <button onclick="clear()" type="button" class="btn btn-warning"><i
+                                            class="fa fa-eraser"></i> <span>Clear</span></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-12 col-md-12">
+            <div class="card planned_task">
+                <div class="header header2">
+                    <h2>DANH SÁCH TÀI KHOẢN</h2>
+                </div>
+                <div class="body">
+                    <div class="table-responsive table-hover m-b-0 c_list myTable">
+                        <table class="table m-b-0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Full name</th>
+                                    <th>User name</th>
+                                    <th>Mã hệ thống</th>
+                                    <th>Phòng ban</th>
+                                    <th>Thuộc nhóm</th>
+                                    <th>Ngày tạo</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.Accounts != null)
+                                {
+                                    foreach (Account acc in Model.Accounts)
+                                    {
+                                        <tr>
+                                            <td>@acc.AccountId</td>
+                                            <td>
+                                                <img src="/images/Account/@acc.Images" class="rounded-circle avatar" alt="">
+                                                <p class="c_name">@acc.Name</p>
+                                            </td>
+                                            <td><span class="badge badge-primary">@acc.UserName</span></td>
+                                            <td>@acc.Code</td>
+                                            <td><span class="badge badge-info">@acc.Department.DepartmentName</span></td>
+                                            <td><span class="badge badge-warning">@acc.Permission.Name</span></td>
+                                            <td><span class="badge badge-default">@acc.CreateDate</span></td>
+                                            <td>
+                                                <button
+                                                    data-href='@Url.Action("AccountInfo", Constants.AccoutManagerController, new { AccountId = acc.AccountId })'
+                                                    type="button" class="btn btn-info edit" title="Edit"><i
+                                                        class="fa fa-edit"></i></button>
+                                                <button
+                                                    data-href='@Url.Action("DeleteAccount ", Constants.AccoutManagerController, new { AccountId = acc.AccountId })'
+                                                    type="button" data-type="confirm"
+                                                    class="btn btn-danger js-sweetalert delete" title="Delete"><i
+                                                        class="fa fa-trash-o"></i></button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Slider -->
+        <div class="row clearfix">
+            <div class="col-lg-12 col-md-12 col-sm-12" style="display:none">
+                <div class="card">
+
+                    <div class="body">
+                        <div class="row clearfix">
+                            <div class="col-lg-6 col-md-12">
+                                <div id="nouislider_basic_example"></div>
+                            </div>
+                            <div class="col-lg-6 col-md-12">
+                                <div id="nouislider_range_example"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</form>
+
+
+@section Scripts {
+    <script src="~/vendor/bootstrap-colorpicker/js/bootstrap-colorpicker.js"></script> <!-- Bootstrap Colorpicker Js -->
+    <script src="~/vendor/jquery-inputmask/jquery.inputmask.bundle.js"></script> <!-- Input Mask Plugin Js -->
+    <script src="~/vendor/jquery.maskedinput/jquery.maskedinput.min.js"></script>
+    <script src="~/vendor/multi-select/js/jquery.multi-select.js"></script> <!-- Multi Select Plugin Js -->
+    <script src="~/vendor/bootstrap-multiselect/bootstrap-multiselect.js"></script>
+    <script src="~/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js"></script> <!-- Bootstrap Tags Input Plugin Js -->
+    <script src="~/vendor/nouislider/nouislider.js"></script> <!-- noUISlider Plugin Js -->
+
+    <script src="~/vendor/select2/select2.min.js"></script> <!-- Select2 Js -->
+
+    <script src="~/bundles/mainscripts.bundle.js"></script>
+    <script src="~/js/pages/forms/advanced-form-elements.js"></script>
+
+    <script>
+        $(function () {
+            // photo upload
+            $('#btn-upload-photo').on('click', function () {
+                $(this).siblings('#fileUpload').trigger('click');
+            });
+
+            $('#filePhotoAvatar').on('click', function () {
+                $('#fileUpload').trigger('click');
+            });
+
+
+
+            // plans
+            $('.btn-choose-plan').on('click', function () {
+                $('.plan').removeClass('selected-plan');
+                $('.plan-title span').find('i').remove();
+
+                $(this).parent().addClass('selected-plan');
+                $(this).parent().find('.plan-title').append('<span><i class="fa fa-check-circle"></i></span>');
+            });
+        });
+    </script>
+    <script>
+        $(function () {
+            $(".myTable").on("click", ".table tbody button.edit", function (e) {
+                window.location.href = $(this).data("href");
+
+            });
+            $(".myTable").on("click", ".table tbody button.delete", function (e) {
+                let text;
+                if (confirm("Delete Data!") == true) {
+                    window.location.href = $(this).data("href");
+                }
+            });
+        });
+
+    </script>
+    <script>
+
+        function ChangeImg() {
+            uploadFiles('fileUpload')
+        }
+        var fileimg = "";
+        function uploadFiles(inputId) {
+            var input = document.getElementById(inputId); //get file input id
+            var files = input.files; //get files
+            var formData = new FormData(); //create form
+
+            for (var i = 0; i != files.length; i++) {
+                formData.append("files", files[i]); //loop through all files and append
+            }
+            $.ajax(
+                {
+                    url: "/AccoutManager/AjaxUpload",
+                    data: formData, // send it as formData
+                    processData: false,
+                    contentType: false,
+                    async: false,
+                    type: "POST", //type is post as we will need to post files
+                    success: function (data) {
+                        //$(".product_main_imgbox").show();
+                        $("#filePhotoAvatar").attr("src", "/images/Account/" + data);
+                        //fileimg = data;
+                        $("#Images").val(data).change();
+                    }
+                }
+            );
+
+        }
+    </script>
+}

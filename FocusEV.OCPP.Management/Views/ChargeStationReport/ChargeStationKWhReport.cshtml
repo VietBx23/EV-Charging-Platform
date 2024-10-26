@@ -1,0 +1,78 @@
+﻿@model IEnumerable<FocusEV.OCPP.Management.Models.ChargeStationKWhSummary>
+
+@{
+    ViewBag.Title = "Charge Station KWh Report";
+}
+
+<div class="container-fluid">
+    <!-- Form để chọn tháng và năm -->
+    <form method="get" asp-action="ChargeStationKWhReport">
+        <div class="row">
+            <div class="col-lg-3 col-md-6">
+                <div class="form-group">
+                    <label for="month">Month</label>
+                    <select id="month" name="month" class="form-control form-control-lg">
+                        @for (int i = 1; i <= 12; i++)
+                        {
+                            if (ViewBag.SelectedMonth != null && ViewBag.SelectedMonth == i)
+                            {
+                                <option value="@i" selected>@i</option>
+                            }
+                            else
+                            {
+                                <option value="@i">@i</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <div class="form-group">
+                    <label for="year">Year</label>
+                    <select id="year" name="year" class="form-control form-control-lg">
+                        @for (int i = 2020; i <= DateTime.Now.Year; i++)
+                        {
+                            if (ViewBag.SelectedYear != null && ViewBag.SelectedYear == i)
+                            {
+                                <option value="@i" selected>@i</option>
+                            }
+                            else
+                            {
+                                <option value="@i">@i</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+
+    <!-- Bảng dữ liệu thống kê -->
+    <table class="table table-striped mt-4">
+        <thead>
+            <tr>
+                <th>Tên Trạm Sạc</th>
+                <th>Tổng KWh Tiêu Thụ</th>
+                <th>Tổng KWh Lado Mobile</th>
+                <th>Tổng KWh Focus</th>
+                <th>Tổng KWh Khách Lạ</th>
+                <th>Tổng KWh Thẻ Từ</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.ChargeStationName</td>
+                    <td>@item.TotalKWhConsumedByStation</td>
+                    <td>@item.TotalKWhLadoMobile</td>
+                    <td>@item.TotalKWhFocus</td>
+                    <td>@item.TotalKWhGuest</td>
+                    <td>@item.TotalKWhLadoCard</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div></div>

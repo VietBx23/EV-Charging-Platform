@@ -1,0 +1,135 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@{
+    ViewData["Title"] = @Localizer["BẢN GHI Thanh toán nạp tiền VNPay"];
+    ViewData["MainMenu"] = "Giám sát";
+}
+
+@section VendorCSS {
+
+}
+    @using FocusEV.OCPP.Management.Models.Api
+    <div class="navbar navbar-light" style="background-color: #e3f2fd;">
+        <span>Tổng tiền nạp thành công </span> <strong> @ViewBag.TotalSucess.ToString("#,##0")</strong>
+    </div>
+    <div class="row clearfix">
+
+        <div class="col-lg-12 col-md-12">
+            <div class="card planned_task">
+     <button type="button" class="btn btn-xs btn-success" onclick="exportData1()" style="font-size: 10px; margin: 7px;"><i class="fa fa-save"></i> <span>EXPORT EXCEL</span></button>
+
+                @*<div class="header header2">
+            <h2>LỊCH SỬ DÙNG THẺ TỪ</h2>
+            </div>*@
+                <div class="body">
+                    <div class="table-responsive">
+                        <table class="table m-b-0 table-striped table-hover" id="myTable">
+                            <thead>
+                                <tr>
+                                    <th>UserappId </th>
+                                    <th>Fullname </th>
+                                    <th>Phone</th>
+                                    <th>Mã giao dịch</th>
+                                    <th>Số tiền nạp</th>
+                                    <th>Ngày nạp</th>
+                                    <th>Bank code</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @if (Model != null)
+                            {
+                                foreach (var item in (IEnumerable<VNPayMonitor>)Model)
+                                {
+                                    <tr>
+                                        <td>@item.UserApp.Id</td>
+                                        <td>@item.UserApp.Fullname</td>
+                                        <td>@item.UserApp.Phone</td>
+                                        <td><strong>@item.DepositHistory.DepositCode</strong></td>
+                                        <td><strong class="text-primary">@item.DepositHistory.Amount.ToString("#,##0")</strong> đ</td>
+                                        <td>@item.DepositHistory.DateCreate.ToString("dd/MM/yyyy")</td>
+                                        <td>@item.VnpIPNLog.vnp_BankCode</td>
+                                        <td>
+                                            @if (item.VnpIPNLog.vnp_ResponseCode == "00")
+                                            {
+                                                <strong class="text-primary">Thành công</strong>
+                                            }
+                                            else
+                                            {
+                                                @if (item.VnpIPNLog.vnp_ResponseCode == "24")
+                                                {
+                                                    <strong class="text-danger">Đã hủy</strong>
+                                                }
+                                                else
+                                                {
+                                                    <strong class="text-danger">Thất bại</strong>
+                                                }
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<script src="~/vendor/jquery/jquery-3.3.1.min.js"></script>
+@section Scripts {
+    <script src="~/vendor/bootstrap-colorpicker/js/bootstrap-colorpicker.js"></script> <!-- Bootstrap Colorpicker Js -->
+    <script src="~/vendor/jquery-inputmask/jquery.inputmask.bundle.js"></script> <!-- Input Mask Plugin Js -->
+    <script src="~/vendor/jquery.maskedinput/jquery.maskedinput.min.js"></script>
+    <script src="~/vendor/multi-select/js/jquery.multi-select.js"></script> <!-- Multi Select Plugin Js -->
+    <script src="~/vendor/bootstrap-multiselect/bootstrap-multiselect.js"></script>
+    <script src="~/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js"></script> <!-- Bootstrap Tags Input Plugin Js -->
+    <script src="~/vendor/nouislider/nouislider.js"></script> <!-- noUISlider Plugin Js -->
+
+    <script src="~/vendor/select2/select2.min.js"></script> <!-- Select2 Js -->
+
+    <script src="~/bundles/mainscripts.bundle.js"></script>
+    <script src="~/js/pages/forms/advanced-form-elements.js"></script>
+    <script src="~/bundles/knob.bundle.js"></script> <!-- Jquery Knob-->
+    <script src="~/js/widgets/infobox/infobox-1.js"></script>
+
+    <script src="~/bundles/datatablescripts.bundle.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/dataTables.buttons.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.bootstrap4.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.colVis.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.html5.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.print.min.js"></script>
+    <script src="~/vendor/sweetalert/sweetalert.min.js"></script> <!-- SweetAlert Plugin Js -->
+    <script src="~/js/pages/tables/jquery-datatable.js"></script>
+}
+<script src="~/js/xlsxmin.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#myTable').DataTable({
+                ordering: false
+            });
+        });
+
+        function exportData1() {
+            var workbook = XLSX.utils.book_new();
+
+            //var worksheet_data  =  [['hello','world']];
+            //var worksheet = XLSX.utils.aoa_to_sheet(worksheet_data);
+
+            var worksheet_data = document.getElementById("myTable");
+            var worksheet = XLSX.utils.table_to_sheet(worksheet_data);
+
+            workbook.SheetNames.push("FocusEV_Thongke");
+            workbook.Sheets["FocusEV_Thongke"] = worksheet;
+
+            exportExcelFile(workbook);
+        }
+
+        function exportExcelFile(workbook) {
+            return XLSX.writeFile(workbook, "focusev_data.xlsx");
+        }
+    </script>

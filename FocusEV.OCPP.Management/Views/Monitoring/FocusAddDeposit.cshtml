@@ -1,0 +1,106 @@
+﻿@section VendorCSS {
+    <link rel="stylesheet" href="~/vendor/bootstrap-multiselect/bootstrap-multiselect.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-colorpicker/css/bootstrap-colorpicker.css" />
+    <link rel="stylesheet" href="~/vendor/multi-select/css/multi-select.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.css">
+    <link rel="stylesheet" href="~/vendor/nouislider/nouislider.min.css" />
+    <link rel="stylesheet" href="~/vendor/select2/select2.css" />
+
+    <style>
+        .demo-card label {
+            display: block;
+            position: relative;
+        }
+
+        .demo-card .col-lg-4 {
+            margin-bottom: 30px;
+        }
+    </style>
+}
+<div class="form-group">
+
+    <strong >Chọn user : </strong>
+    <select class="js-example-basic-single form-control" name="state" id="slaccount" style="margin-top:10px;">
+        @if (ViewBag.Listuser != null)
+        {
+            foreach (FocusEV.OCPP.Database.UserApp item in ViewBag.Listuser)
+            {
+                <option value="@item.Id">@item.Fullname | @item.Email | Balance:  @item.Balance</option>
+            }
+        }
+
+    </select>
+</div>
+<div class="form-group">
+    <strong>Số tiền nạp : </strong>
+    <input id="ipbalance" placeholder="Tiền nạp" class="form-control" style="margin-top:10px;" />
+</div>
+<div class="form-group">
+    <a class="btn btn-primary" onclick="addDepositfree()" style="color:white;cursor:pointer">
+        Nạp
+    </a>
+</div>
+<script src="~/vendor/jquery/jquery-3.3.1.min.js"></script>
+@section Scripts {
+    <script src="~/vendor/bootstrap-colorpicker/js/bootstrap-colorpicker.js"></script> <!-- Bootstrap Colorpicker Js -->
+    <script src="~/vendor/jquery-inputmask/jquery.inputmask.bundle.js"></script> <!-- Input Mask Plugin Js -->
+    <script src="~/vendor/jquery.maskedinput/jquery.maskedinput.min.js"></script>
+    <script src="~/vendor/multi-select/js/jquery.multi-select.js"></script> <!-- Multi Select Plugin Js -->
+    <script src="~/vendor/bootstrap-multiselect/bootstrap-multiselect.js"></script>
+    <script src="~/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js"></script> <!-- Bootstrap Tags Input Plugin Js -->
+    <script src="~/vendor/nouislider/nouislider.js"></script> <!-- noUISlider Plugin Js -->
+
+    <script src="~/vendor/select2/select2.min.js"></script> <!-- Select2 Js -->
+
+    <script src="~/bundles/mainscripts.bundle.js"></script>
+    <script src="~/js/pages/forms/advanced-form-elements.js"></script>
+    <script src="~/bundles/knob.bundle.js"></script> <!-- Jquery Knob-->
+    <script src="~/js/widgets/infobox/infobox-1.js"></script>
+
+    <script src="~/bundles/datatablescripts.bundle.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/dataTables.buttons.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.bootstrap4.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.colVis.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.html5.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.print.min.js"></script>
+    <script src="~/vendor/sweetalert/sweetalert.min.js"></script> <!-- SweetAlert Plugin Js -->
+    <script src="~/js/pages/tables/jquery-datatable.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('.js-example-basic-single').select2();
+        });
+        function addDepositfree()
+        {
+            if ($("#ipbalance").val()==""){
+
+                alert("Vui lòng nhập số tiền");
+                $("#ipbalance").focus();
+                return;
+            }
+            var param = {
+                "Id": $("#slaccount").val(),
+                "balance": $("#ipbalance").val()
+            }
+            $.ajax({
+                url: '/Monitoring/AddDepositFree',
+                dataType: 'html',
+                data: param,
+                type:"POST",
+                success: function (data, status, xhr) {
+                    if(data == "true"){
+                        alert("Nạp tiền thành công");
+                        location.reload();
+                    }
+                    else{
+                        alert("Nạp tiền thất bại");
+                    }
+                },
+                error: function (xhr, status, error) {
+                    alert(status);
+                }
+            });
+        }
+    </script>
+}

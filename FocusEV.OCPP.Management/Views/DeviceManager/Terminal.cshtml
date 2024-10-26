@@ -1,0 +1,124 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization;
+@inject IViewLocalizer Localizer
+@{
+    ViewData["Title"] = @Localizer["Quản lý terminalid"];
+    ViewData["MainMenu"] = "Quản ly terminalid";
+}
+
+
+@section VendorCSS {
+    <link rel="stylesheet" href="~/vendor/bootstrap-multiselect/bootstrap-multiselect.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-colorpicker/css/bootstrap-colorpicker.css" />
+    <link rel="stylesheet" href="~/vendor/multi-select/css/multi-select.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.css">
+    <link rel="stylesheet" href="~/vendor/nouislider/nouislider.min.css" />
+    <link rel="stylesheet" href="~/vendor/select2/select2.css" />
+
+    <style>
+        .demo-card label {
+            display: block;
+            position: relative;
+        }
+
+        .demo-card .col-lg-4 {
+            margin-bottom: 30px;
+        }
+    </style>
+}
+
+    <form method="post">
+        <div class="row clearfix">
+
+            <div class="col-lg-12 col-md-12">
+                <div class="card planned_task">
+                    <div class="header header2">
+                        <h2>DANH SÁCH TerminalID</h2>
+                    </div>
+                    <div class="body">
+                    @if (Model != null)
+                    {
+                        <div class="table-responsive myTable">
+                            <table id="dtChargePoints" class="table table-hover m-b-0 " style="margin-bottom: 20px;">
+                                <thead>
+                                    <tr>
+                                        <th class="th-sm">@Localizer["ChargePointId"]</th>
+                                        <th class="th-sm">@Localizer["ConnectorId"]</th>
+                                        <th class="th-sm">@Localizer["Tên trạm sạc"]</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="myCardRow">
+                                    @if (Model != null)
+                                    {
+                                        foreach (ConnectorStatus cp in Model)
+                                        {
+                                            <tr>
+                                                <td>@cp.ChargePointId</td>
+                                                <td>@cp.ConnectorId</td>
+                                                <td><input onchange="changeData('@cp.ChargePointId',this,@cp.ConnectorId)" value="@cp.terminalId" data-id=@cp.ChargePointId /></td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+<!-- Input Slider -->
+<div class="row clearfix" style="display:none">
+    <div class="col-lg-12 col-md-12 col-sm-12">
+        <div class="card">
+
+            <div class="body">
+                <div class="row clearfix">
+                    <div class="col-lg-6 col-md-12">
+                        <div id="nouislider_basic_example"></div>
+                    </div>
+                    <div class="col-lg-6 col-md-12">
+                        <div id="nouislider_range_example"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/vendor/bootstrap-colorpicker/js/bootstrap-colorpicker.js"></script> <!-- Bootstrap Colorpicker Js -->
+    <script src="~/vendor/jquery-inputmask/jquery.inputmask.bundle.js"></script> <!-- Input Mask Plugin Js -->
+    <script src="~/vendor/jquery.maskedinput/jquery.maskedinput.min.js"></script>
+    <script src="~/vendor/multi-select/js/jquery.multi-select.js"></script> <!-- Multi Select Plugin Js -->
+    <script src="~/vendor/bootstrap-multiselect/bootstrap-multiselect.js"></script>
+    <script src="~/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js"></script> <!-- Bootstrap Tags Input Plugin Js -->
+    <script src="~/vendor/nouislider/nouislider.js"></script> <!-- noUISlider Plugin Js -->
+    <script src="~/vendor/select2/select2.min.js"></script> <!-- Select2 Js -->
+    <script src="~/js/pages/forms/advanced-form-elements.js"></script>
+    <script>
+
+        function changeData(id, dis, ConnectorId) {
+            var valueChanged = $(dis).val();
+            var param = {
+                "id": id,
+                "data": valueChanged,
+                "ConnectorId": ConnectorId
+            }
+            $.ajax({
+                url: '/DeviceManager/ChangeData',
+                dataType: 'html',
+                type: "POST",
+                data: param,
+                success: function (data, status, xhr) {
+                    
+                },
+                error: function (xhr, status, error) {
+                    alert(status);
+                }
+            });
+        }
+    </script>
+}

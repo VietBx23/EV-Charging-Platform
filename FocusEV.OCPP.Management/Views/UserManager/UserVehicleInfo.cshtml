@@ -1,0 +1,80 @@
+﻿
+@{
+    ViewData["Title"] = "Thông tin phương tiện";
+    ViewData["MainMenu"] = "Quản ly người dùng";
+    
+}
+
+@section VendorCSS {
+
+}
+
+<div class="row clearfix">
+
+    <div class="col-lg-12 col-md-12">
+        <div class="card planned_task">
+            <div class="header">
+                <h2>THÔNG TIN PHƯƠNG TIỆN</h2>
+                <ul class="header-dropdown">
+                    <li class="dropdown">
+                        <a href="javascript:void(0);" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"></a>
+                        <ul class="dropdown-menu dropdown-menu-right">
+                            <li><a href="javascript:void(0);">Action</a></li>
+                            <li><a href="javascript:void(0);">Another Action</a></li>
+                            <li><a href="javascript:void(0);">Something else</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <div class="body">
+                <div class="table-responsive">
+                    <table class="table m-b-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Patients</th>
+                                <th>Adress</th>
+                                <th>START Date</th>
+                                <th>END Date</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td><span>John</span></td>
+                                <td><span class="text-info">70 Bowman St. South Windsor, CT 06074</span></td>
+                                <td>Sept 13, 2017</td>
+                                <td>Sept 16, 2017</td>
+                                <td><span class="badge badge-success">HOẠT ĐỘNG</span></td>
+                                <td>
+                                    <button type="button" class="btn btn-info" title="Edit"><i class="fa fa-edit"></i></button>
+                                    <button type="button" data-type="confirm" class="btn btn-danger js-sweetalert" title="Delete"><i class="fa fa-trash-o"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td><span>Jack Bird</span></td>
+                                <td><span class="text-info">123 6th St. Melbourne, FL 32904</span></td>
+                                <td>Sept 13, 2017</td>
+                                <td>Sept 22, 2017</td>
+                                <td><span class="badge badge-default">TẠM NGƯNG</span></td>
+                                <td>
+                                    <button type="button" class="btn btn-info" title="Edit"><i class="fa fa-edit"></i></button>
+                                    <button type="button" data-type="confirm" class="btn btn-danger js-sweetalert" title="Delete"><i class="fa fa-trash-o"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+
+}

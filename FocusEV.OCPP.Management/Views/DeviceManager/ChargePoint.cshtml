@@ -1,0 +1,347 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@model ChargePointViewModel
+@inject IViewLocalizer Localizer
+@{
+    ViewData["Title"] = @Localizer["Quản lý trụ sạc"];
+    ViewData["MainMenu"] = "Quản ly thiết bị";
+}
+
+
+@section VendorCSS {
+    <link rel="stylesheet" href="~/vendor/bootstrap-multiselect/bootstrap-multiselect.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-colorpicker/css/bootstrap-colorpicker.css" />
+    <link rel="stylesheet" href="~/vendor/multi-select/css/multi-select.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.css">
+    <link rel="stylesheet" href="~/vendor/nouislider/nouislider.min.css" />
+    <link rel="stylesheet" href="~/vendor/select2/select2.css" />
+
+    <style>
+        .demo-card label {
+            display: block;
+            position: relative;
+        }
+
+        .demo-card .col-lg-4 {
+            margin-bottom: 30px;
+        }
+    </style>
+}
+
+<form method="post">
+    <div class="row clearfix">
+
+        <div class="col-lg-12 col-md-12">
+            <div class="card planned_task">
+                <div class="body">
+                    <div class="row clearfix demo-masked-input">
+                        <div class="row col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                            <div class="col-lg-3 col-md-6 col-sm-12">
+                                <div class="form-group">
+                                    <p>Chủ đầu tư</p>
+                                    <select class="form-control show-tick ms search-select" data-placeholder="Select" asp-for="@Model.OwnerId">
+                                        @if (ViewBag.OwnerList != null)
+                                        {
+                                            foreach (var item in (IEnumerable<Owner>)ViewBag.OwnerList)
+                                            {
+                                                <option value="@item.OwnerId">@item.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 col-sm-12">
+                                <div class="form-group">
+                                    <p>Chọn trạm sạc</p>
+                                    <select class="form-control show-tick ms search-select" data-placeholder="Select" asp-for="@Model.ChargeStationId">
+                                        @if (ViewBag.ChargeStationList != null)
+                                        {
+                                            foreach (var item in (IEnumerable<ChargeStation>)ViewBag.ChargeStationList)
+                                            {
+                                                <option value="@item.ChargeStationId">@item.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 col-sm-12">
+                                <div class="form-group">
+                                    <p>ID Trụ sạc:</p>
+                                    <input type="text" id="chargePointID" class="form-control" placeholder="nhập số ID trụ sạc" asp-for="@Model.ChargePointId">
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 col-sm-12">
+                                <div class="form-group">
+                                    <p>Tên trụ sạc</p>
+                                    <input type="text" id="chargePointName" class="form-control" placeholder="nhập tên trạm sạc" asp-for="@Model.Name">
+                                </div>
+                            </div>
+                         </div>
+
+                        <div class="row col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                            <div class="col-lg-3 col-md-6 col-sm-12 no-gutters">
+                                <div class="col-lg-12 col-md-12">
+                                    <div class="form-group">
+                                        <p>Model của trụ</p>
+                                        <input type="text" id="chargePointModel" class="form-control" placeholder="nhập Model trụ" asp-for="@Model.ChargePointModel">
+                                    </div>
+                                </div>
+                                <div class="col-lg-12 col-md-12">
+                                    <div class="form-group">
+                                        <p>Phiên bản OCPP</p>
+                                        <select class="form-control show-tick ms search-select" data-placeholder="Select" asp-for="@Model.OCPPVersion">
+                                            <option value="OCPP_1.6">OCPP 1.6</option>
+                                            <option value="OCPP_2.0">OCPP 2.0</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-lg-12 col-md-12">
+                                    <div class="form-group">
+                                        <p>Trạng thái (State)</p>
+                                        <select class="form-control show-tick ms search-select" data-placeholder="Select" asp-for="@Model.ChargePointState">
+                                            <option value="0">Tạm dừng</option>
+                                            <option value="1">Hoạt động</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>                       
+                            <div class="col-lg-6 col-md-6 col-sm-12 no-gutters">
+                                <div class="col-lg-12 col-md-12 col-sm-12">
+                                    <div class="form-group">
+                                        <p>Mô tả trụ sạc</p>
+                                        <textarea class="form-control" rows="5" cols="30" asp-for="@Model.Comment"></textarea>
+                                    </div>
+                                </div>
+                                <div class="col-lg-12 col-md-12 d-flex align-items-center">
+                                    <button type="submit" class="btn btn-success" style="margin-right: 15px;"><i class="fa fa-save"></i> <span>Save</span></button>
+                                    <button type="button" class="btn btn-warning" style="margin-right: 15px;"><i class="fa fa-eraser"></i> <span>Clear</span></button>
+                                    @if (!string.IsNullOrWhiteSpace(Model.ChargePointId))
+                                    {
+                                        <button type="button" class="btn btn-info" id="btnReset" title="@Localizer["TitleReset"]" onclick="ResetChargepoint()" style="margin-right: 15px;"><i class="fas fa-redo"></i> @Localizer["TitleReset"]</button>
+                                        <button type="button" class="btn btn-info" id="btnUnlock" title="@Localizer["TitleUnlockConnector"]" onclick="UnlockConnector()"><i class="fas fa-lock-open"></i> @Localizer["TitleUnlockConnector"]</button>
+                                    }
+                                </div>
+                                <div class="col-lg-6 col-md-6 d-flex align-items-center" style=" margin-top: 5px;">
+                                   
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 col-sm-12 no-gutters">
+
+                            </div>
+                            <div class="col-lg-3 col-md-6 col-sm-12 no-gutters">
+
+                            </div>
+                        </div>                       
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-12 col-md-12">
+            <div class="card planned_task">
+                <div class="header header2">
+                    <h2>DANH SÁCH MÃ TRỤ SẠC</h2>
+                </div>
+                <div class="body">                    
+                        @if (Model != null)
+                        {
+                            <div class="table-responsive myTable">
+                                <table id="dtChargePoints" class="table table-hover m-b-0 " style="margin-bottom: 20px;">
+                                    <thead>
+                                        <tr>
+                                            <th class="th-sm">@Localizer["Chủ đầu tư"]</th>
+                                            <th class="th-sm">@Localizer["Tên trạm sạc"]</th>
+                                            <th class="th-sm">@Localizer["ID Trụ sạc"]</th>
+                                            <th class="th-sm">@Localizer["Tên trụ sạc"]</th>
+                                            <th class="th-sm">@Localizer["Mô tả trụ sạc"]</th>
+                                            <th class="th-sm">@Localizer["Model trụ sạc"]</th>
+                                            <th class="th-sm">@Localizer["Trạng thái/OCPP"]</th>
+                                            <th class="th-sm">@Localizer["Action"]</th>
+                                            @*<th class="th-sm">@Localizer["ChargePointId"]</th>
+                                            <th class="th-sm">@Localizer["Name"]</th>
+                                            <th class="th-sm">@Localizer["Comment"]</th>*@
+                                        </tr>
+                                    </thead>
+                                    <tbody class="myCardRow">
+                                        @if (Model.ChargePoints != null)
+                                        {
+                                            foreach (ChargePoint cp in Model.ChargePoints)
+                                            {
+                                                <tr class="table-row" data-href='@Url.Action("ChargePoint", Constants.DeviceManagerController, new { Id = cp.ChargePointId })'>
+                                                    <td>@cp.OwnerVtl.Name</td>
+                                                    <td><span class="badge badge-default">@cp.ChargeStationVtl.Name</span></td>
+                                                    <td><span class="badge badge-warning">@cp.ChargePointId</span></td>
+                                                    <td><span class="badge badge-primary">@cp.Name</span></td>
+                                                    <td>@cp.Comment</td>
+                                                    <td>@cp.ChargePointModel</td>
+                                                    <td><span class="badge badge-info">@((cp.ChargePointState == "0") ? "Tạm dừng" : "Hoạt động")</span><span class="badge badge-success">@cp.OCPPVersion</span></td>
+                                                    <td>
+                                                        <button data-href='@Url.Action("ChargePoint", Constants.DeviceManagerController, new { Id = cp.ChargePointId })' type="button" class="btn btn-info edit" title="Edit"><i class="fa fa-edit"></i></button>                                                   
+                                                        <button type="button" data-type="confirm" class="btn btn-danger js-sweetalert" title="Delete"><i class="fa fa-trash-o"></i></button>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div> 
+                        }                                  
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+<!-- Input Slider -->
+<div class="row clearfix" style="display:none">
+    <div class="col-lg-12 col-md-12 col-sm-12">
+        <div class="card">
+
+            <div class="body">
+                <div class="row clearfix">
+                    <div class="col-lg-6 col-md-12">
+                        <div id="nouislider_basic_example"></div>
+                    </div>
+                    <div class="col-lg-6 col-md-12">
+                        <div id="nouislider_range_example"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/vendor/bootstrap-colorpicker/js/bootstrap-colorpicker.js"></script> <!-- Bootstrap Colorpicker Js -->
+    <script src="~/vendor/jquery-inputmask/jquery.inputmask.bundle.js"></script> <!-- Input Mask Plugin Js -->
+    <script src="~/vendor/jquery.maskedinput/jquery.maskedinput.min.js"></script>
+    <script src="~/vendor/multi-select/js/jquery.multi-select.js"></script> <!-- Multi Select Plugin Js -->
+    <script src="~/vendor/bootstrap-multiselect/bootstrap-multiselect.js"></script>
+    <script src="~/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js"></script> <!-- Bootstrap Tags Input Plugin Js -->
+    <script src="~/vendor/nouislider/nouislider.js"></script> <!-- noUISlider Plugin Js -->
+    <script src="~/vendor/select2/select2.min.js"></script> <!-- Select2 Js -->
+    <script src="~/js/pages/forms/advanced-form-elements.js"></script>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ChargePointId))
+    {
+        <script>
+            function ResetChargepoint() {
+                var dialog = new BootstrapDialog({
+                    title: '@Localizer["TitleReset"]',
+                    message: '@string.Format(Localizer["DialogReset"].Value, Model.Name)',
+                    spinicon: 'fa fa-spinner fa-fw',
+                    buttons: [{
+                        id: 'btnDialogReset',
+                        label: '@Localizer["TitleReset"]',
+                        icon: 'fas fa-redo',
+                        autospin: true,
+                        action: function (dialogRef) {
+                            dialogRef.enableButtons(false);
+                            dialogRef.setClosable(false);
+                            dialogRef.getModalBody().html('@Localizer["ExecuteReset"]');
+
+                            var xmlhttp = new XMLHttpRequest();
+                            xmlhttp.onreadystatechange = function () {
+                                if (xmlhttp.readyState == XMLHttpRequest.DONE) {
+                                    if (xmlhttp.status == 200) {
+                                        dialogRef.getModalBody().html(xmlhttp.responseText);
+                                    }
+                                    else {
+                                        dialogRef.getModalBody().html('@Localizer["ErrorReset"]');
+                                    }
+
+                                    dialogRef.setClosable(true);
+                                    dialogRef.enableButtons(true);
+                                    var $resetButton = dialog.getButton('btnDialogReset');
+                                    $resetButton.hide();
+                                    var $cancelButton = dialog.getButton('btnDialogCancel');
+                                    $cancelButton.text('@Localizer["Close"]');
+
+                                }
+                            };
+                            xmlhttp.open("GET", "@Html.Raw(Url.Content("~/API/Reset/" + Uri.EscapeDataString(Model.ChargePointId)))", true);
+                            xmlhttp.send();
+                        }
+                    }, {
+                        id: 'btnDialogCancel',
+                        label: '@Localizer["Cancel"]',
+                        action: function (dialogRef) {
+                            dialogRef.close();
+                        }
+                    }]
+                });
+                dialog.open();
+            }
+
+            function UnlockConnector() {
+                var dialog = new BootstrapDialog({
+                    title: '@Localizer["TitleUnlockConnector"]',
+                    message: '@string.Format(Localizer["DialogUnlockConnector"].Value, Model.Name)',
+                    spinicon: 'fa fa-spinner fa-fw',
+                    buttons: [{
+                        id: 'btnUnlock',
+                        label: '@Localizer["TitleUnlockConnector"]',
+                        icon: 'fas fa-lock-open',
+                        autospin: true,
+                        action: function (dialogRef) {
+                            dialogRef.enableButtons(false);
+                            dialogRef.setClosable(false);
+                            dialogRef.getModalBody().html('@Localizer["ExecuteUnlock"]');
+
+                            var xmlhttp = new XMLHttpRequest();
+                            xmlhttp.onreadystatechange = function () {
+                                if (xmlhttp.readyState == XMLHttpRequest.DONE) {
+                                    if (xmlhttp.status == 200) {
+                                        dialogRef.getModalBody().html(xmlhttp.responseText);
+                                    }
+                                    else {
+                                        dialogRef.getModalBody().html('@Localizer["ErrorUnlock"]');
+                                    }
+
+                                    dialogRef.setClosable(true);
+                                    dialogRef.enableButtons(true);
+                                    var $resetButton = dialog.getButton('btnUnlock');
+                                    $resetButton.hide();
+                                    var $cancelButton = dialog.getButton('btnDialogCancel');
+                                    $cancelButton.text('@Localizer["Close"]');
+
+                                }
+                            };
+                            xmlhttp.open("GET", "@Html.Raw(Url.Content("~/API/UnlockConnector/" + Uri.EscapeDataString(Model.ChargePointId)))", true);
+                            xmlhttp.send();
+                        }
+                    }, {
+                        id: 'btnDialogCancel',
+                        label: '@Localizer["Cancel"]',
+                        action: function (dialogRef) {
+                            dialogRef.close();
+                        }
+                    }]
+                });
+                dialog.open();
+            }
+        </script>
+    }
+
+    <script>
+        $(function () {
+
+            $(".myTable").on("click", ".table tbody tr button.edit", function (e) {
+                window.location.href = $(this).data("href");
+            });
+            $(".myTable").on("click", ".table tbody button.delete", function (e) {
+                let text;
+                if (confirm("Delete Data!") == true) {
+                    window.location.href = $(this).data("href");
+                }
+            });
+
+            $(".myTable").on("click", ".table tbody tr", function (e) {
+                window.location.href = $(this).data("href");
+                //alert("redirect to:" + $(this).data("href"));
+            });
+
+
+        });
+    </script>
+}

@@ -1,0 +1,69 @@
+﻿
+<div class="card planned_task">
+    <button type="button" class="btn btn-xs btn-primary" onclick="exportData1()" style="font-size: 10px; margin: 7px;"><i class="fa fa-save"></i> <span>EXPORT EXCEL</span></button>
+    <div class="body">
+       
+        <div class="table-responsive">
+            <table class="table m-b-0 dataTable js-exportable" id="myTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Trụ sạc</th>
+                        <th>ConectorID</th>
+                        <th>
+                            Tổng số kWh
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null)
+                    {
+                        var i = 1;
+                        @foreach (var item in (IEnumerable<Transaction>)Model)
+                        {
+                            <tr>
+                                <td><span>@i</span></td>
+                                <td>@item.ChargePointId</td>
+                                <td>@item.ConnectorId</td>
+                                <td>@item.MeterStop</td>
+                            </tr>
+
+                            i++;
+                        }
+
+                    }
+
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<script src="~/js/xlsxmin.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        $('#myTable').DataTable();
+
+    });
+
+    function exportData1() {
+        var workbook = XLSX.utils.book_new();
+
+		//var worksheet_data  =  [['hello','world']];
+		//var worksheet = XLSX.utils.aoa_to_sheet(worksheet_data);
+
+		var worksheet_data = document.getElementById("myTable");
+		var worksheet = XLSX.utils.table_to_sheet(worksheet_data);
+
+		workbook.SheetNames.push("FocusEV_Thongketru");
+		workbook.Sheets["FocusEV_Thongketru"] = worksheet;
+
+		exportExcelFile(workbook);
+    }
+
+    function exportExcelFile(workbook) {
+	    return XLSX.writeFile(workbook, "focusev_data_thongke.xlsx");
+    }
+</script>

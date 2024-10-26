@@ -1,0 +1,347 @@
+﻿@{
+    ViewData["Title"] = "Thông tin người dùng";
+    ViewData["MainMenu"] = "Quản ly người dùng";
+    
+}
+@model CustomerViewModel
+@section VendorCSS {
+    <link rel="stylesheet" href="~/vendor/bootstrap-multiselect/bootstrap-multiselect.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-colorpicker/css/bootstrap-colorpicker.css" />
+    <link rel="stylesheet" href="~/vendor/multi-select/css/multi-select.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.css">
+    <link rel="stylesheet" href="~/vendor/nouislider/nouislider.min.css" />
+    <link rel="stylesheet" href="~/vendor/select2/select2.css" />
+
+    <style>
+        .demo-card label {
+            display: block;
+            position: relative;
+        }
+
+        .demo-card .col-lg-4 {
+            margin-bottom: 30px;
+        }
+    </style>
+}
+
+<div class="row clearfix">
+    <form method="post">
+        <div class="col-lg-12 col-md-12">
+            <div class="card planned_task">
+                <div class="body">
+                    <div class="row clearfix demo-masked-input">
+                        <div class="row col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                            <div class="col-lg-3 col-md-3">
+                                <div class="media">
+                                    <div class="media-left m-r-15">
+                                        @{
+                                            if (Model.Images != null)
+                                            {
+                                                <img src="/images/Customer/@Model.Images" ser-photo media-object" alt="User" id="filePhotoAvatar" style="width: 100%;">
+                                            }
+                                            else
+                                            {
+                                                <img src="~/images/user.png" class="user-photo media-object" alt="User" id="filePhotoAvatar" style="width: 100%;">
+                                            }
+                                        }
+                                    </div>
+                                    <div class="media-body">
+                                        <p>
+                                            Upload your photo.
+                                            <br> <em>Image should be at least 140px x 140px</em>
+                                        </p>
+                                        <button type="button" class="btn btn-default-dark" id="btn-upload-photo">Upload Photo</button>
+                                        <input onchange="ChangeImg()" type="file" id="fileUpload" class="sr-only">
+                                        <input asp-for="@Model.Images" type="hidden" />
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <input asp-for="@Model.UserName" type="text" id="userName" class="form-control" placeholder="nhập username">
+                                </div>
+                                <div class="form-group">
+                                    <input asp-for="@Model.Password" type="text" id="userPassword" class="form-control" placeholder="nhập password">
+                                </div>
+                                <div class="form-group">
+                                    <input type="text" id="userPasswordConfirm" class="form-control" placeholder="xác nhận password">
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-md-4">
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="icon-user"></i></span>
+                                        </div>
+                                        <input asp-for="@Model.FirtName" type="text" id="firstName" class="form-control" placeholder="First name">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="icon-user"></i></span>
+                                        </div>
+                                        <input asp-for="@Model.LastName" type="text" id="firstName" class="form-control" placeholder="Last name">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div>
+                                        <label class="fancy-radio">
+                                            <input name="gender2" value="male" type="radio" checked>
+                                            <span><i></i>Male</span>
+                                        </label>
+                                        <label class="fancy-radio">
+                                            <input name="gender2" value="female" type="radio">
+                                            <span><i></i>Female</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="icon-home"></i></span>
+                                        </div>
+                                        <input asp-for="@Model.Company" type="text" class="form-control" placeholder="Công ty">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fa fa-phone"></i></span>
+                                        </div>
+                                        <input asp-for="@Model.Phone" type="text" class="form-control mobile-phone-number" placeholder="Số điện thoại">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fa fa-envelope-o"></i></span>
+                                        </div>
+                                        <input asp-for="@Model.Email" type="text" class="form-control email" placeholder="Nhập email">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-md-4">
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="icon-tag"></i></span>
+                                        </div>
+                                        <select asp-for="@Model.RoleCustomerID" class="form-control show-tick ms search-select" data-placeholder="Chọn Role người dùng">
+                                            <option></option>
+                                            @if (ViewBag.ListRole != null)
+                                            {
+                                                foreach (var it in (IEnumerable<RoleCustomer>)ViewBag.ListRole)
+                                                {
+                                                    <option value="@it.RoleCustomerID">@it.RoleCustomerName</option>
+                                                }
+                                            }
+
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="icon-credit-card"></i></span>
+                                        </div>
+                                        <select asp-for="@Model.TagId" class="form-control show-tick ms search-select" data-placeholder="Chỉ định thẻ từ">
+                                            <option></option>
+                                            @if (ViewBag.ListTag != null)
+                                            {
+                                                foreach (var it in ViewBag.ListTag)
+                                                    //foreach (var it in (IEnumerable<ChargeTags>)ViewBag.ListTag)
+                                                {
+                                                    <option value="@it.TagId">@it.TagId</option>
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                                @* <div class="form-group">
+                                <p>Mô tả trụ sạc</p>
+                                <textarea class="form-control" rows="4" cols="30" required="" spellcheck="false"></textarea>
+                                </div>*@
+                                <button type="submit" class="btn btn-success" style="margin-right: 15px;"><i class="fa fa-save"></i> <span>Save</span></button>
+                                <button href="/UserManager/UserInfo" type="button" class="btn btn-warning"><i class="fa fa-eraser"></i> <span>Clear</span></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    <a onclick="clear()">
+        clear
+    </a>
+    <div class="col-lg-12 col-md-12">
+        <div class="card planned_task">
+            <div class="header header2">
+                <h2>DANH SÁCH MÃ TRỤ SẠC</h2>
+            </div>
+            <div class="body">
+                <div class="table-responsive table-hover m-b-0 c_list myTable">
+                    <table class="table m-b-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Full name</th>
+                                <th>User name</th>
+                                <th>Role user</th>
+                                <th>Sử dụng thẻ từ</th>
+                                <th>Công ty</th>
+                                <th>Số điện thoại</th>
+                                <th>Email</th>
+                                <th>Ngày tạo</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Customers != null)
+                            {
+                                foreach (var item in Model.Customers)
+                                {
+                                    <tr>
+                                        <td>@item.CustomerId</td>
+                                        <td>
+                                            <img src="/images/Customer/@item.Images" class="rounded-circle avatar" alt="">
+                                            <p class="c_name">@item.FirtName @item.LastName</p>
+                                        </td>
+                                        <td><span class="badge badge-primary">@item.UserName</span></td>
+                                        <td><span class="badge badge-info">@item.RoleCustomer.RoleCustomerName</span></td>
+                                        <td><span class="badge badge-success">@item.TagId</span></td>
+                                        <td>@item.Company</td>
+                                        <td>@item.Phone</td>
+                                        <td>@item.Email</td>
+                                        <td><span class="badge badge-primary">@item.CreateDate</span></td>
+                                        <td>
+                                            <button data-href='@Url.Action("UserInfo", Constants.UserManagerController, new { CustomerId = item.CustomerId })' type="button" class="btn btn-info edit" title="Edit"><i class="fa fa-edit"></i></button>
+                                            <button data-href='@Url.Action("DeleteUser", Constants.UserManagerController, new { CustomerId = item.CustomerId })' type="button" data-type="confirm" class="btn btn-danger js-sweetalert delete" title="Delete"><i class="fa fa-trash-o"></i></button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Input Slider -->
+    <div class="row clearfix">
+        <div class="col-lg-12 col-md-12 col-sm-12" style="display:none">
+            <div class="card">
+
+                <div class="body">
+                    <div class="row clearfix">
+                        <div class="col-lg-6 col-md-12">
+                            <div id="nouislider_basic_example"></div>
+                        </div>
+                        <div class="col-lg-6 col-md-12">
+                            <div id="nouislider_range_example"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script src="~/vendor/bootstrap-colorpicker/js/bootstrap-colorpicker.js"></script> <!-- Bootstrap Colorpicker Js -->
+    <script src="~/vendor/jquery-inputmask/jquery.inputmask.bundle.js"></script> <!-- Input Mask Plugin Js -->
+    <script src="~/vendor/jquery.maskedinput/jquery.maskedinput.min.js"></script>
+    <script src="~/vendor/multi-select/js/jquery.multi-select.js"></script> <!-- Multi Select Plugin Js -->
+    <script src="~/vendor/bootstrap-multiselect/bootstrap-multiselect.js"></script>
+    <script src="~/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js"></script> <!-- Bootstrap Tags Input Plugin Js -->
+    <script src="~/vendor/nouislider/nouislider.js"></script> <!-- noUISlider Plugin Js -->
+
+    <script src="~/vendor/select2/select2.min.js"></script> <!-- Select2 Js -->
+
+    <script src="~/bundles/mainscripts.bundle.js"></script>
+    <script src="~/js/pages/forms/advanced-form-elements.js"></script>
+
+    <script>
+        $(function () {
+            // photo upload
+            $('#btn-upload-photo').on('click', function () {
+                $(this).siblings('#fileUpload').trigger('click');
+            });
+
+            $('#filePhotoAvatar').on('click', function () {
+                $('#fileUpload').trigger('click');
+            });
+
+
+
+            // plans
+            $('.btn-choose-plan').on('click', function () {
+                $('.plan').removeClass('selected-plan');
+                $('.plan-title span').find('i').remove();
+
+                $(this).parent().addClass('selected-plan');
+                $(this).parent().find('.plan-title').append('<span><i class="fa fa-check-circle"></i></span>');
+            });
+        });
+    </script>
+    <script>
+        $(function () {
+            $(".myTable").on("click", ".table tbody button.edit", function (e) {
+                window.location.href = $(this).data("href");
+
+            });
+            $(".myTable").on("click", ".table tbody button.delete", function (e) {
+                let text;
+                if (confirm("Delete Data!") == true) {
+                    window.location.href = $(this).data("href");
+                }
+            });
+        });
+
+    </script>
+    <script>
+
+        function ChangeImg() {
+            uploadFiles('fileUpload')
+        }
+        var fileimg = "";
+        function uploadFiles(inputId) {
+            var input = document.getElementById(inputId); //get file input id
+            var files = input.files; //get files
+            var formData = new FormData(); //create form
+
+            for (var i = 0; i != files.length; i++) {
+                formData.append("files", files[i]); //loop through all files and append
+            }
+            $.ajax(
+                {
+                    url: "/UserManager/AjaxUpload",
+                    data: formData, // send it as formData
+                    processData: false,
+                    contentType: false,
+                    async: false,
+                    type: "POST", //type is post as we will need to post files
+                    success: function (data) {
+                        //$(".product_main_imgbox").show();
+                        $("#filePhotoAvatar").attr("src", "/images/Customer/" + data);
+                        //fileimg = data;
+                        $("#Images").val(data).change();
+                    }
+                }
+            );
+
+        }
+
+
+    </script>
+}
+<script>
+    function clear() {
+        alert("sdasd")
+        window.location.href = "/UserManager/UserInfo";
+    }
+</script>

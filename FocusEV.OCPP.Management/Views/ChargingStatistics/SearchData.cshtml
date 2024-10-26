@@ -1,0 +1,215 @@
+﻿@*@if (Model != null)
+{
+    <div class="table-responsive myTable">
+        <table id="dtChargePoints" class="table table-hover m-b-0 " style="margin-bottom: 20px;">
+            <thead>
+                <tr>
+                    <th class="th-sm">Trụ sạc</th>
+                </tr>
+            </thead>
+            <tbody class="myCardRow">
+
+                @foreach (var item in (IEnumerable<Transaction>)Model)
+                {
+                <tr class="table-row">
+                    <td>@item.ChargePointId</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}   *@
+@using FocusEV.OCPP.Management.Models.Api;
+<div class="card planned_task">
+     <button type="button" class="btn btn-xs btn-success" onclick="exportData1()" style="font-size: 10px; margin: 7px;"><i class="fa fa-save"></i> <span>EXPORT EXCEL</span></button>
+    <div class="body">
+       @* <div class="row clearfix">
+            <div class="col-lg-2 col-md-3 col-sm-4 col-xs-6">
+                <div class="card text-center bg-info">
+                    <div class="body">
+                        <div class="p-15 text-light">
+                            <h3>4,657.20</h3>
+                            <span>Voltage</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-3 col-sm-4 col-xs-6">
+                <div class="card text-center bg-secondary">
+                    <div class="body">
+                        <div class="p-15 text-light">
+                            <h3>1,765.90</h3>
+                            <span>Ampe</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-3 col-sm-4 col-xs-6">
+                <div class="card text-center bg-warning">
+                    <div class="body">
+                        <div class="p-15 text-light">
+                            <h3>25,750</h3>
+                            <span>kWh</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-3 col-sm-4 col-xs-6">
+                <div class="card text-center l-coral">
+                    <div class="body">
+                        <div class="p-15 text-light">
+                            <h3>9,850 PLN</h3>
+                            <span>Total Fee</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-3 col-sm-4 col-xs-6">
+                <div class="card text-center bg-success">
+                    <div class="body">
+                        <div class="p-15 text-light">
+                            <h3>25</h3>
+                            <span>Charge card in uses</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-3 col-sm-4 col-xs-6">
+                <div class="card text-center l-parpl">
+                    <div class="body">
+                        <div class="p-15 text-light">
+                            <h3>25,500,000</h3>
+                            <span>Doanh thu</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>*@
+       
+
+        <div class="table-responsive">
+            <table class="table m-b-0 dataTable js-exportable" id="myTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>
+                            Username
+                        </th>
+                        <th>
+                            Fullname
+                        </th>
+                        <th>Chủ đầu tư</th>
+                        <th>Trạm sạc</th>
+                        <th>Trụ sạc</th>
+                        <th>ConnectorId</th>
+                       @* <th>Customer</th>*@
+                        <th>Tên thẻ</th>
+                        <th>Thời gian bắt đầu</th>
+                        <th>Thời gian kết thúc</th>
+                        <th>Số kW BĐ</th>
+                        <th>Số kW KT</th>
+                        <th>Số điện tiêu thụ (kWh)</th>
+                        <th>Giá tiền (VNĐ)</th>
+                        @*  <th>thông tin sạc</th>
+                        <th>Now rate</th>
+                        <th>Charge Fee</th>
+                        <th>Total Fee</th>*@
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null)
+                    {
+                        var i = 1;
+                        @foreach (var item in (IEnumerable<api_Transaction>)Model)
+                        {
+                            <tr>
+                                <td>@i</td>
+                                <td>
+                                    @if(item.UserApp!=null){
+                                       <span>@item.UserApp.UserName</span>
+                                    }
+                                    else{
+                                        <span>n/a</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.UserApp != null)
+                                    {
+                                        <span>@item.UserApp.Fullname</span>
+                                    }
+                                    else
+                                    {
+                                        <span>n/a</span>
+                                    }
+                                </td>
+                                <td><span>@item.Owner.Name</span></td>
+                                <td><span class="text-success">@item.ChargeStation.Name</span></td>
+                                <td><span class="text-info">@item.ChargePoint.Name</span></td>
+                                <td>@item.Transaction.ConnectorId</td>
+                               @* <td>@(item.Customer != null ? (item.Customer.FirtName +""+item.Customer.LastName):"")</td>*@
+                                <td><span class="badge badge-info ">@(item.ChargeTag!=null?item.ChargeTag.TagName:"")</span></td>
+                                <td>
+                                    @((DateTime)item.Transaction.StartTime.AddHours(7))
+                                </td>
+                                <td>
+                                    @(item.Transaction.StopTime.HasValue ? item.Transaction.StopTime.Value.AddHours(7) : DateTime.MinValue)
+                                </td>
+                                 <td>
+                                    @item.Transaction.MeterStart
+                                </td>
+                                <td>
+                                    @item.Transaction.MeterStop
+                                </td>
+                                <td>@(Math.Round(item.TotalValue,2)) </td>
+                                <td>@item.TotalPrice </td>
+                                @* <td><span class="badge badge-warning">418.2 V</span><span class="badge badge-success">144.4 A</span><span class="badge badge-danger">1.830 kWh</span></td>
+                        <td><span class="badge badge-primary">1.00 PLN</span></td>
+                        <td><span class="badge badge-primary">1.83 PLN</span></td>
+                        <td><span class="badge badge-primary">1.83 PLN</span></td>*@
+                            </tr>
+                            i++;
+                        }
+
+                    }
+
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<script src="~/js/xlsxmin.min.js"></script>
+
+<script>
+   
+
+    function exportData1() {
+        var workbook = XLSX.utils.book_new();
+
+		//var worksheet_data  =  [['hello','world']];
+		//var worksheet = XLSX.utils.aoa_to_sheet(worksheet_data);
+
+		var worksheet_data = document.getElementById("myTable");
+		var worksheet = XLSX.utils.table_to_sheet(worksheet_data);
+
+		workbook.SheetNames.push("FocusEV_Thongke");
+		workbook.Sheets["FocusEV_Thongke"] = worksheet;
+
+		exportExcelFile(workbook);
+    }
+
+    function exportExcelFile(workbook) {
+	    return XLSX.writeFile(workbook, "focusev_data.xlsx");
+    }
+
+
+</script>
+<script>
+    $(document).ready(function () {
+        $('#myTable').DataTable({
+            ordering: false,
+            "pageLength": -1 // Số dòng hiển thị mặc định
+        });
+    });
+</script>

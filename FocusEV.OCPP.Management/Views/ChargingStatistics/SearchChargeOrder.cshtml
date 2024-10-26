@@ -1,0 +1,326 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@{
+    ViewData["Title"] = @Localizer["Title"];
+    ViewData["MainMenu"] = "THỐNG KÊ BÁO CÁO";
+    
+}
+
+@section VendorCSS {
+    <link rel="stylesheet" href="~/vendor/bootstrap-multiselect/bootstrap-multiselect.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.min.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-colorpicker/css/bootstrap-colorpicker.css" />
+    <link rel="stylesheet" href="~/vendor/multi-select/css/multi-select.css">
+    <link rel="stylesheet" href="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.css">
+    <link rel="stylesheet" href="~/vendor/nouislider/nouislider.min.css" />
+    <link rel="stylesheet" href="~/vendor/select2/select2.css" />
+    <link rel="stylesheet" href="~/vendor/jquery-datatable/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/vendor/jquery-datatable/fixedeader/dataTables.fixedcolumns.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/vendor/jquery-datatable/fixedeader/dataTables.fixedheader.bootstrap4.min.css">
+
+    <style>
+        .demo-card label {
+            display: block;
+            position: relative;
+        }
+
+        .demo-card .col-lg-4 {
+            margin-bottom: 30px;
+        }
+    </style>
+}
+
+<div class="row clearfix">
+    <div class="col-lg-12 col-md-12">
+        <div class="card planned_task">
+            <div class="body">
+                <div class="row clearfix demo-masked-input">
+                    <div class="row col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                        <div class="col-lg-3 col-md-6">
+                            <div class="form-group">
+                                <p>Chủ đầu tư </p>
+                                <select onchange="owchange()" class="form-control show-tick ms search-select" id="slOnwer" data-placeholder="Chọn chủ đầu tư">
+                                    @if(ViewBag.ListOwner!=null){
+                                        foreach(var item in (IEnumerable<Owner>)ViewBag.ListOwner){
+                                            @*if(item.OwnerId==1)
+                                             {
+                                                <option value="@item.OwnerId">@item.Name</option>
+                                             }*@
+                                             <option value="@item.OwnerId">@item.Name</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="form-group">
+                                <p>Chọn trạm sạc</p>
+                                <select onchange="cschange()" class="form-control show-tick ms search-select" data-placeholder="Chọn trạm sạc" id="slChargeStation"> 
+                                    
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="form-group">
+                                <p>Chọn trụ sạc</p>
+                                <select class="form-control show-tick ms search-select" data-placeholder="Chọn trụ sạc" id="slChargePint">
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                        <div class="col-lg-3 col-md-6 col-sm-12">
+                            <p>Thời gian từ</p>
+                            <div class="input-group mb-3">
+                                <input id="fromdate" value="18/10/2023" data-provide="datepicker" data-date-autoclose="true" class="form-control" data-date-format="dd/mm/yyyy" placeholder="dd/mm/yyyy">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary" type="button"><i class="fa fa-calendar"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 col-sm-12">
+                            <p>Thời gian đến</p>
+                            <div class="input-group mb-3">
+                                <input id="todate" data-date-autoclose="true" class="form-control" placeholder="dd/mm/yyyy">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary" type="button"><i class="fa fa-calendar"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-6 d-flex align-items-center">
+                            <button type="button" class="btn btn-success" onclick="callResult()" style="margin-right: 15px;"><i class="fa fa-save"></i> <span>VIEW</span></button>
+                            <button type="button" class="btn btn-warning" onclick="callClear()"><i class="fa fa-eraser"></i> <span>Clear</span></button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="row clearfix">
+    <div class="col-lg-12 col-md-12 dvResult">
+       
+    </div>
+</div>
+
+<!-- Input Slider -->
+<div class="row clearfix" style="display:none">
+    <div class="col-lg-12 col-md-12 col-sm-12">
+        <div class="card">
+
+            <div class="body">
+                <div class="row clearfix">
+                    <div class="col-lg-6 col-md-12">
+                        <div id="nouislider_basic_example"></div>
+                    </div>
+                    <div class="col-lg-6 col-md-12">
+                        <div id="nouislider_range_example"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/vendor/bootstrap-colorpicker/js/bootstrap-colorpicker.js"></script> <!-- Bootstrap Colorpicker Js -->
+    <script src="~/vendor/jquery-inputmask/jquery.inputmask.bundle.js"></script> <!-- Input Mask Plugin Js -->
+    <script src="~/vendor/jquery.maskedinput/jquery.maskedinput.min.js"></script>
+    <script src="~/vendor/multi-select/js/jquery.multi-select.js"></script> <!-- Multi Select Plugin Js -->
+    <script src="~/vendor/bootstrap-multiselect/bootstrap-multiselect.js"></script>
+    <script src="~/vendor/bootstrap-datepicker/js/bootstrap-datepicker.min.js"></script>
+    <script src="~/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js"></script> <!-- Bootstrap Tags Input Plugin Js -->
+    <script src="~/vendor/nouislider/nouislider.js"></script> <!-- noUISlider Plugin Js -->
+
+    <script src="~/vendor/select2/select2.min.js"></script> <!-- Select2 Js -->
+
+    <script src="~/bundles/mainscripts.bundle.js"></script>
+    <script src="~/js/pages/forms/advanced-form-elements.js"></script>
+    <script src="~/bundles/knob.bundle.js"></script> <!-- Jquery Knob-->
+    <script src="~/js/widgets/infobox/infobox-1.js"></script>
+
+    <script src="~/bundles/datatablescripts.bundle.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/dataTables.buttons.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.bootstrap4.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.colVis.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.html5.min.js"></script>
+    <script src="~/vendor/jquery-datatable/buttons/buttons.print.min.js"></script>
+    <script src="~/vendor/sweetalert/sweetalert.min.js"></script> <!-- SweetAlert Plugin Js -->
+    <script src="~/js/pages/tables/jquery-datatable.js"></script>
+    <script>
+
+        $('.dvResult').hide();
+
+        function callResult() {
+            if ($('#slOnwer').val() == "0") {
+                alert("haha")
+            }
+            $('.dvResult').show();
+        }
+
+        function callClear() {
+            $('.dvResult').hide();
+        }
+
+        $('.knob').knob({
+            draw: function () {
+                // "tron" case
+                if (this.$.data('skin') == 'tron') {
+
+                    var a = this.angle(this.cv) // Angle
+                        ,
+                        sa = this.startAngle // Previous start angle
+                        ,
+                        sat = this.startAngle // Start angle
+                        ,
+                        ea // Previous end angle
+                        , eat = sat + a // End angle
+                        ,
+                        r = true;
+
+                    this.g.lineWidth = this.lineWidth;
+
+                    this.o.cursor &&
+                        (sat = eat - 0.3) &&
+                        (eat = eat + 0.3);
+
+                    if (this.o.displayPrevious) {
+                        ea = this.startAngle + this.angle(this.value);
+                        this.o.cursor &&
+                            (sa = ea - 0.3) &&
+                            (ea = ea + 0.3);
+                        this.g.beginPath();
+                        this.g.strokeStyle = this.previousColor;
+                        this.g.arc(this.xy, this.xy, this.radius - this.lineWidth, sa, ea, false);
+                        this.g.stroke();
+                    }
+
+                    this.g.beginPath();
+                    this.g.strokeStyle = r ? this.o.fgColor : this.fgColor;
+                    this.g.arc(this.xy, this.xy, this.radius - this.lineWidth, sat, eat, false);
+                    this.g.stroke();
+
+                    this.g.lineWidth = 2;
+                    this.g.beginPath();
+                    this.g.strokeStyle = this.o.fgColor;
+                    this.g.arc(this.xy, this.xy, this.radius - this.lineWidth + 1 + this.lineWidth * 2 / 3, 0, 2 * Math.PI, false);
+                    this.g.stroke();
+
+                    return false;
+                }
+            }
+        });
+
+        $('#linecustom1').sparkline('html', {
+            height: '55px',
+            width: '100%',
+            lineColor: '#a095e5',
+            fillColor: '#a095e5',
+            minSpotColor: true,
+            maxSpotColor: true,
+            spotColor: '#e2a8df',
+            spotRadius: 0
+        });
+
+        $('#linecustom2').sparkline('html', {
+            height: '55px',
+            width: '100%',
+            lineColor: '#75c3f2',
+            fillColor: '#75c3f2',
+            minSpotColor: true,
+            maxSpotColor: true,
+            spotColor: '#8dbfe0',
+            spotRadius: 0
+        });
+
+        $('#linecustom3').sparkline('html', {
+            height: '55px',
+            width: '100%',
+            lineColor: '#fc7b92',
+            fillColor: '#fc7b92',
+            minSpotColor: true,
+            maxSpotColor: true,
+            spotColor: '#e0b89d',
+            spotRadius: 0
+        });
+
+        function owchange() {
+            //Load data for Trạm sạc
+            var param = {
+                "OwnerId": $("#slOnwer").val(),
+            }
+            $.ajax({
+                url: '/ChargingStatistics/LoadChargeStation',
+                dataType: 'html',
+                data: param,
+                success: function (data, status, xhr) {
+                    $("#slChargeStation").html(data);
+                    $("#slChargeStation").val(0).change();
+                   
+                },
+                error: function (xhr, status, error) {
+                    alert(status);
+                }
+            });
+        }
+        $(document).ready(function(){
+            $("#todate").datepicker({
+                format: 'dd/mm/yyyy'
+            });
+            var today = new Date();
+            // Định dạng ngày hiện tại
+            var formattedDate = today.getDate() + '/' + (today.getMonth() + 1) + '/' + today.getFullYear();
+            $("#todate").val(formattedDate).change();
+            owchange();
+        })
+          function cschange(){
+            var param = {
+                "ChargeStationId": $("#slChargeStation").val(),
+            }
+            $.ajax({
+                url: '/ChargingStatistics/LoadChargePoint',
+                dataType: 'html',
+                data: param,
+                success: function (data, status, xhr) {
+                    $("#slChargePint").html(data);
+                    $("#slChargePint").val(0).change();
+
+                    callResult();
+                },
+                error: function (xhr, status, error) {
+                    alert(status);
+                }
+            });
+          }
+
+          function callResult()
+          {
+            var param = {
+                "OwnerId": $("#slOnwer").val(),
+                "ChargeStationId": $("#slChargeStation").val(),
+                "ChargePointId": $("#slChargePint").val(),
+                "FromDate": $("#fromdate").val(),
+                "ToDate": $("#todate").val(),
+            }
+            $.ajax({
+                url: '/ChargingStatistics/SearchData',
+                dataType: 'html',
+                data: param,
+                success: function (data, status, xhr) {
+                      $('.dvResult').show();
+                      $('.dvResult').html(data)
+                },
+                error: function (xhr, status, error) {
+                    alert(status);
+                }
+            });
+          }
+
+
+
+    </script>
+ 
+}    <script src="~/vendor/jquery/jquery.min.js"></script>

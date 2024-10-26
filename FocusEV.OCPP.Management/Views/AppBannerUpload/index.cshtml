@@ -1,0 +1,136 @@
+﻿@using System.Linq
+@{
+    ViewData["Title"] = "Upload Banner";
+    var imageFiles = ViewBag.ImageFiles as List<string>;
+}
+
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8 col-sm-10">
+            <div class="controller align-content-lg-center">
+                @* <h1 class="text-center">Upload Banner</h1> *@
+                <!-- File upload form -->
+                <div id="resultMessage" class="text-center"></div>
+
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="form-group mb-2">
+                        <input type="file" class="form-control-file text-center" name="file" id="file" />
+                        <button type="submit" class="btn btn-primary btn-block mt-3">UPLOAD</button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+@* <!-- Carousel to display images -->
+<div id="imageCarousel" class="carousel slide container-fluid col-sm-10 " data-bs-ride="carousel">
+    <div class="carousel-inner">
+        @if (imageFiles != null && imageFiles.Count > 0)
+        {
+            foreach (var imageFile in imageFiles)
+            {
+                <div class="carousel-item @(imageFile == imageFiles.First() ? "active" : "")">
+                    <img src="@Url.Content("~/images/bannerApp" + imageFile)" class="d-block w-100" style="height:700px" alt="Image">
+                </div>
+            }
+        }
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#imageCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#imageCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+    </button>
+</div> *@
+
+
+<div class="container col-sm-10 ">
+    <table class="table ">
+        <thead>
+            <tr>
+                <th>Image</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (imageFiles != null)
+            {
+                foreach (var imageFile in imageFiles)
+                {
+                    <tr>
+                        <td>
+                            <img src="@Url.Content("~/images/banner/" + imageFile)" class="img-thumbnail" style="max-width: 150px;" />
+                        </td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" onclick="deleteImage('@imageFile')">Delete</button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+
+</div>
+<!-- Table to list images with delete buttons -->
+
+
+
+<script>
+    $(document).ready(function () {
+        window.deleteImage = function (fileName) {
+            if (confirm(`Are you sure you want to delete ${fileName}?`)) {
+                $.ajax({
+                    url: '/AppBannerUpload/DeleteImage',
+                    type: 'POST',
+                    data: JSON.stringify({ fileName: fileName }),
+                    contentType: 'application/json; charset=utf-8',
+                    success: function (data) {
+                        if (data.success) {
+                            $('#resultMessage').text(data.message).css('color', 'green');
+                            location.reload();
+                        } else {
+                            $('#resultMessage').text(data.message).css('color', 'red');
+                        }
+                    },
+                    error: function () {
+                        $('#resultMessage').text('An error occurred while deleting the image.').css('color', 'red');
+                    }
+                });
+            }
+        }
+
+        $('#uploadForm').on('submit', function (e) {
+            e.preventDefault();
+
+            var formData = new FormData();
+            formData.append('file', $('#file')[0].files[0]);
+
+            $.ajax({
+                url: '/AppBannerUpload/UploadBanner',
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function (data) {
+                    if (data.success) {
+                        $('#resultMessage').text(data.message + ": " + data.fileName).css('color', 'green');
+                        location.reload();
+                    } else {
+                        $('#resultMessage').text(data.message).css('color', 'red');
+                    }
+                },
+                error: function () {
+                    $('#resultMessage').text('An error occurred while uploading the file.').css('color', 'red');
+                }
+            });
+        });
+    });
+</script>
