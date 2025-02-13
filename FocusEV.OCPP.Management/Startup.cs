@@ -15,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using FocusEV.OCPP.Database;
 using FocusEV.OCPP.Management.Controllers;
+using FocusEV.OCPP.Management.Services;
 
 namespace FocusEV.OCPP.Management
 {
@@ -32,7 +33,7 @@ namespace FocusEV.OCPP.Management
         {
             services.AddControllersWithViews();
 
-         
+            services.AddTransient<EmailService>();
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
                 {

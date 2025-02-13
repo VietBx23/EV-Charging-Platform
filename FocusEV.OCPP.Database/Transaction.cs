@@ -22,6 +22,6 @@ namespace FocusEV.OCPP.Database
         public double? MeterStop { get; set; }
         public string StopReason { get; set; }
         public virtual ChargePoint ChargePoint { get; set; }
-
+       
     }
 }

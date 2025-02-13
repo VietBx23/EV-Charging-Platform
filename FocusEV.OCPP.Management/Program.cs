@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -26,6 +26,7 @@ namespace FocusEV.OCPP.Management
                         {
                             builder.AddConfiguration(ctx.Configuration.GetSection("Logging"));
                             //builder.AddEventLog(o => o.LogName = "FocusEV.OCPP");
+
                             builder.AddFile(o => o.RootPath = ctx.HostingEnvironment.ContentRootPath);
                             builder.Services.AddRazorPages().AddRazorRuntimeCompilation();
                         })

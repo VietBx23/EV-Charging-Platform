@@ -15,6 +15,7 @@ using System.Globalization;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 namespace FocusEV.OCPP.Management.Controllers
 {
@@ -86,6 +87,7 @@ namespace FocusEV.OCPP.Management.Controllers
         }
 
 
+        
         [Authorize]
         public IActionResult AccountInfo(int AccountId, AccountViewModel avm)
         {
@@ -97,6 +99,7 @@ namespace FocusEV.OCPP.Management.Controllers
                     TempData["ErrMsgKey"] = "AccessDenied";
                     return RedirectToAction("Error", new { Id = "" });
                 }
+
                 ViewBag.DatePattern = CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern;
                 ViewBag.Language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
                 avm.AccountId = AccountId;
@@ -141,25 +144,68 @@ namespace FocusEV.OCPP.Management.Controllers
                     else
                     {
                         var model = dbContext.Accounts.ToList();
+
+                        // Kiểm tra nếu username là "admin"
+                        if (User.Identity.Name.Equals("admin", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Logger.LogInformation("Admin user detected, displaying all entries.");
+                            // Hiển thị toàn bộ danh sách
+                            model = model.ToList();
+                        }
+                        else
+                        {
+                            Logger.LogInformation($"Filtering entries for user: {User.Identity.Name}");
+                            // Lọc danh sách dựa trên username
+                            model = model.Where(m => m.UserName.Equals(User.Identity.Name, StringComparison.OrdinalIgnoreCase)).ToList();
+                        }
+
+
+
+
+                        // Nếu tên đăng nhập là 'admin', hiển thị tất cả các quyền
+                        if (User.Identity.Name.Equals("admin", StringComparison.OrdinalIgnoreCase))
+                        {
+                            ViewBag.ListPermission = dbContext.Permissions.ToList();  // Hiển thị tất cả quyền
+                        }
+                        else
+                        {
+                            // Nếu không phải 'admin', hiển thị quyền của tài khoản theo PermissionId
+                            var userPermissionId = dbContext.Accounts
+                                .Where(up => up.UserName == User.Identity.Name)
+                                .Select(up => up.PermissionId)
+                                .FirstOrDefault(); // Lấy PermissionId của tài khoản đăng nhập
+
+                            // Kiểm tra nếu tìm thấy PermissionId
+                            if (userPermissionId != 0)
+                            {
+                                ViewBag.ListPermission = dbContext.Permissions
+                                    .Where(p => p.PermissionId == userPermissionId)
+                                    .ToList();  // Hiển thị quyền của tài khoản theo PermissionId
+                            }
+                            else
+                            {
+                                ViewBag.ListPermission = new List<Permission>();  // Nếu không có quyền, trả về danh sách trống
+                            }
+                        }
+
+
                         ViewBag.ListDapartment = dbContext.Departments.ToList();
-                        ViewBag.ListPermission = dbContext.Permissions.ToList();
                         avm.Accounts = model;
 
                         if (AccountId != 0)
                         {
                             var current = model.Where(m => m.AccountId == AccountId).FirstOrDefault();
-                            avm.Name = current.Name;
-                            avm.UserName = current.UserName;
-                            avm.Password = Decrypt(current.Password); // Giải mã mật khẩu
-                            avm.Code = current.Code;
+                            avm.Name = current?.Name;
+                            avm.UserName = current?.UserName;
+                            avm.Password = current != null ? Decrypt(current.Password) : string.Empty; // Giải mã mật khẩu
+                            avm.Code = current?.Code;
                             avm.DepartmentId = current.DepartmentId;
                             avm.PermissionId = current.PermissionId;
-                            avm.Images = current.Images;
+                            avm.Images = current?.Images;
                         }
                         return View(avm);
                     }
                 }
-
             }
             catch (Exception exp)
             {
@@ -168,6 +214,7 @@ namespace FocusEV.OCPP.Management.Controllers
                 return RedirectToAction("Error", new { Id = "" });
             }
         }
+
 
 
 

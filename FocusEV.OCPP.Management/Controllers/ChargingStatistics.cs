@@ -12,6 +12,7 @@ using Microsoft.Extensions.Localization;
 using System.Globalization;
 using FocusEV.OCPP.Management.Models.Api;
 using System.Security.Claims;
+using Org.BouncyCastle.Utilities;
 
 namespace FocusEV.OCPP.Management.Controllers
 {
@@ -29,103 +30,76 @@ namespace FocusEV.OCPP.Management.Controllers
             Logger = loggerFactory.CreateLogger<ChargingStatisticsController>();
         }
         [Authorize]
+        [Authorize]
         public IActionResult ChargeDataDaily()
         {
             using (OCPPCoreContext dbContext = new OCPPCoreContext(this.Config))
             {
                 string myUsername = string.Empty;
-                int myOwnerid = 0;
+                int myOwnerId = 0;
+
                 var claimsIdentity = (ClaimsIdentity)User.Identity;
                 var userName = claimsIdentity.FindFirst(ClaimTypes.Name)?.Value;
+
                 if (userName != null)
                 {
-                    var role = claimsIdentity.FindFirst(ClaimTypes.Role)?.Value;
-                    var account = dbContext.Accounts.Where(m => m.UserName == userName).FirstOrDefault();
-                    myUsername = account.UserName.ToString();
-                    myOwnerid = (int)account.OwnerId;
-                    if (myUsername == "ladoadmin")
+                    var account = dbContext.Accounts.FirstOrDefault(m => m.UserName == userName);
+                    if (account != null)
                     {
-                        var lstTransaction = (from tr in dbContext.Transactions
-                                              join cp in dbContext.ChargePoints
-                                              on tr.ChargePointId equals cp.ChargePointId
-                                              where cp.OwnerId == 1
-                                              select tr).ToList();
-                        var groupbyTransaction = lstTransaction.ToList().GroupBy(m => new { m.ChargePointId, m.ConnectorId }).SelectMany(m => m.Take(1)).OrderByDescending(m => m.ChargePointId).ToList();
+                        myUsername = account.UserName;
+                        myOwnerId = account.OwnerId ?? 0;  // Lấy OwnerId từ tài khoản
+
+                        // Check if the logged-in user is 'admin'
+                        bool isAdmin = userName.Equals("admin", StringComparison.OrdinalIgnoreCase);
+
+                        // If the user is 'admin', exclude OwnerId == 4
+                        var lstTransaction = dbContext.Transactions
+                                                      .Join(dbContext.ChargePoints,
+                                                            tr => tr.ChargePointId,
+                                                            cp => cp.ChargePointId,
+                                                            (tr, cp) => new { tr, cp })
+                                                      .Where(x => (isAdmin ? x.cp.OwnerId != 4 : x.cp.OwnerId == myOwnerId))
+                                                      .Select(x => x.tr)
+                                                      .ToList();
+
+                        // Group by ChargePointId and ConnectorId
+                        var groupbyTransaction = lstTransaction
+                                                  .GroupBy(m => new { m.ChargePointId, m.ConnectorId })
+                                                  .SelectMany(m => m.Take(1))  // Only take 1 transaction per group
+                                                  .OrderByDescending(m => m.ChargePointId)  // Ensure sorting before LastOrDefault
+                                                  .ToList();
+
                         foreach (var item in groupbyTransaction)
                         {
                             var getlast = dbContext.Transactions.ToList().Where(m => m.ChargePointId == item.ChargePointId && m.ConnectorId == item.ConnectorId && m.MeterStop.HasValue).LastOrDefault();
                             item.MeterStop = getlast != null ? getlast.MeterStop.Value : 0;
 
                         }
+
+                        // Get the unit price
                         var getRate = dbContext.Unitprices.Where(p => p.IsActive == 1).FirstOrDefault();
 
+                        // Calculate total kWh and CO2
                         var totalUse = groupbyTransaction.Sum(m => m.MeterStop);
                         var totalCo2 = totalUse * 0.0008041;
-                        ViewBag.TotalMeter = $"{groupbyTransaction.Sum(m => m.MeterStop):n}";
+
+                        // Send data to ViewBag
+                        ViewBag.TotalMeter = $"{totalUse:n}";
                         ViewBag.ListTrancsaction = groupbyTransaction;
                         ViewBag.CurrentTime = DateTime.Now;
                         ViewBag.Co2data = $"{totalCo2:n}";
                         ViewBag.Totalcost = $"{(totalUse * (float)getRate.Price):n0}";
-                        return View();
-                    }
-                    else
-                    {
-                        var lstTransaction = (from tr in dbContext.Transactions
-                                              join cp in dbContext.ChargePoints
-                                              on tr.ChargePointId equals cp.ChargePointId
-                                              //where (cp.ChargePointId != "Insitu001" || cp.ChargePointId != "InsituHCM")
-                                              where cp.OwnerId != 4
-                                              select tr).ToList();
-                        var groupbyTransaction = lstTransaction.ToList().GroupBy(m => new { m.ChargePointId, m.ConnectorId }).SelectMany(m => m.Take(1)).OrderByDescending(m => m.ChargePointId).ToList();
-                        foreach (var item in groupbyTransaction)
-                        {
-                            var getlast = dbContext.Transactions.ToList().Where(m => m.ChargePointId == item.ChargePointId && m.ConnectorId == item.ConnectorId && m.MeterStop.HasValue).LastOrDefault();
-                            item.MeterStop = getlast != null ? getlast.MeterStop.Value : 0;
 
-                        }
-                        var getRate = dbContext.Unitprices.Where(p => p.IsActive == 1).FirstOrDefault();
-
-                        var totalUse = groupbyTransaction.Sum(m => m.MeterStop);
-                        var totalCo2 = totalUse * 0.0008041;
-                        ViewBag.TotalMeter = $"{groupbyTransaction.Sum(m => m.MeterStop):n}";
-                        ViewBag.ListTrancsaction = groupbyTransaction;
-                        ViewBag.CurrentTime = DateTime.Now;
-                        ViewBag.Co2data = $"{totalCo2:n}";
-                        ViewBag.Totalcost = $"{(totalUse * (float)getRate.Price):n0}";
                         return View();
                     }
                 }
-                else
-                {
-                    var lstTransaction = (from tr in dbContext.Transactions
-                                          join cp in dbContext.ChargePoints
-                                          on tr.ChargePointId equals cp.ChargePointId
-                                          where cp.OwnerId != 4
-                                          select tr).ToList();
-                    var groupbyTransaction = lstTransaction.ToList().GroupBy(m => new { m.ChargePointId, m.ConnectorId }).SelectMany(m => m.Take(1)).OrderByDescending(m => m.ChargePointId).ToList();
-                    foreach (var item in groupbyTransaction)
-                    {
-                        var getlast = dbContext.Transactions.ToList().Where(m => m.ChargePointId == item.ChargePointId && m.ConnectorId == item.ConnectorId && m.MeterStop.HasValue).LastOrDefault();
-                        //item.MeterStop = getlast.MeterStop.Value;
-                        //var lastMeter = getlast!=null? getlast.MeterStop.Value:0;
-                        //item.MeterStop = $"{lastMeter:n}";
-                        item.MeterStop = getlast != null ? getlast.MeterStop.Value : 0;
 
-                    }
-                    var getRate = dbContext.Unitprices.Where(p => p.IsActive == 1).FirstOrDefault();
-
-                    var totalUse = groupbyTransaction.Sum(m => m.MeterStop);
-                    var totalCo2 = totalUse * 0.0008041;
-                    //ViewBag.TotalMeter = groupbyTransaction.Sum(m => m.MeterStop);
-                    ViewBag.TotalMeter = $"{groupbyTransaction.Sum(m => m.MeterStop):n}";
-                    ViewBag.ListTrancsaction = groupbyTransaction;
-                    ViewBag.CurrentTime = DateTime.Now;
-                    ViewBag.Co2data = $"{totalCo2:n}";
-                    ViewBag.Totalcost = $"{(totalUse * (float)getRate.Price):n0}";
-                    return View();
-                }                           
+                // Handle case for invalid account or not logged in
+                return RedirectToAction("Login", "Account");
             }
         }
+
+
 
         [Authorize]
         public IActionResult ChargeDataDaily_2()
@@ -203,41 +177,59 @@ namespace FocusEV.OCPP.Management.Controllers
             {
                 string myUsername = string.Empty;
                 int myOwnerid = 0;
+
+                // Lấy thông tin tên người dùng từ Claims
                 var claimsIdentity = (ClaimsIdentity)User.Identity;
                 var userName = claimsIdentity.FindFirst(ClaimTypes.Name)?.Value;
+
                 if (userName != null)
                 {
-                    var role = claimsIdentity.FindFirst(ClaimTypes.Role)?.Value;
+                    // Truy vấn tài khoản người dùng trong cơ sở dữ liệu
                     var account = dbContext.Accounts.Where(m => m.UserName == userName).FirstOrDefault();
-                    myUsername = account.UserName.ToString();
-                    myOwnerid = (int)account.OwnerId;
-                    if (myUsername == "ladoadmin")
+
+                    if (account != null)
                     {
-                        ViewBag.ListOwner = dbContext.Owners.Where(m => m.OwnerId == 1).ToList();
+                        // Lấy thông tin tên người dùng và OwnerId
+                        myUsername = account.UserName.ToString();
+                        myOwnerid = (int)account.OwnerId;
+
+                        // Nếu tài khoản là "admin", hiển thị tất cả OwnerId != 4
+                        if (myUsername.Equals("admin", StringComparison.OrdinalIgnoreCase))
+                        {
+                            ViewBag.ListOwner = dbContext.Owners.Where(v => v.OwnerId != 4).ToList();
+                        }
+                        else
+                        {
+                            // Với các tài khoản khác, hiển thị OwnerId của tài khoản đó
+                            ViewBag.ListOwner = dbContext.Owners.Where(m => m.OwnerId == myOwnerid).ToList();
+                        }
                     }
                     else
                     {
+                        // Nếu không tìm thấy tài khoản, hiển thị tất cả OwnerId != 4
                         ViewBag.ListOwner = dbContext.Owners.Where(v => v.OwnerId != 4).ToList();
                     }
                 }
                 else
                 {
+                    // Nếu không tìm thấy tên người dùng trong Claims, hiển thị tất cả OwnerId != 4
                     ViewBag.ListOwner = dbContext.Owners.Where(v => v.OwnerId != 4).ToList();
                 }
+
                 return View();
             }
         }
-        public IActionResult SearchData_old(string ChargePointId,string FromDate, string ToDate)
+        public IActionResult SearchData_old(string ChargePointId, string FromDate, string ToDate)
         {
             using (OCPPCoreContext dbContext = new OCPPCoreContext(this.Config))
             {
                 DateTime myTimeFrom = DateTime.ParseExact(FromDate, "dd/MM/yyyy", CultureInfo.InvariantCulture);
                 DateTime myTimeTo = DateTime.ParseExact(ToDate, "dd/MM/yyyy", CultureInfo.InvariantCulture);
-                var getModel = dbContext.Transactions.Where(m => m.ChargePointId == ChargePointId || ChargePointId=="0").ToList();
+                var getModel = dbContext.Transactions.Where(m => m.ChargePointId == ChargePointId || ChargePointId == "0").ToList();
                 getModel = getModel.Where(m => m.StartTime >= myTimeFrom && m.StartTime <= myTimeTo).ToList();
                 List<api_Transaction> lstapi_Transactions = new List<api_Transaction>();
 
-                foreach(var item in getModel)
+                foreach (var item in getModel)
                 {
                     api_Transaction api_Transaction = new api_Transaction();
                     api_Transaction.Transaction = item;
@@ -249,9 +241,9 @@ namespace FocusEV.OCPP.Management.Controllers
                     decimal totalHour = 0;
                     if (item.StopTime.Value.Second != item.StartTime.Second)
                     {
-                        totalHour= Math.Abs(decimal.Parse((item.StopTime - item.StartTime).Value.TotalHours.ToString()));
+                        totalHour = Math.Abs(decimal.Parse((item.StopTime - item.StartTime).Value.TotalHours.ToString()));
                     }
-                   
+
                     api_Transaction.TotalPrice = Math.Round(totalHour * getUnitPrice);
                     lstapi_Transactions.Add(api_Transaction);
                 }
@@ -260,7 +252,7 @@ namespace FocusEV.OCPP.Management.Controllers
         }
 
 
-        public IActionResult SearchData(int OwnerId,int ChargeStationId,string ChargePointId, string FromDate, string ToDate)
+        public IActionResult SearchData(int OwnerId, int ChargeStationId, string ChargePointId, string FromDate, string ToDate)
         {
             using (OCPPCoreContext dbContext = new OCPPCoreContext(this.Config))
             {
@@ -280,15 +272,15 @@ namespace FocusEV.OCPP.Management.Controllers
                 var model = (from t in dbContext.Transactions
                              join cp in dbContext.ChargePoints
                              on t.ChargePointId equals cp.ChargePointId
-                             join st in dbContext.ChargeStations.Where(m=> ChargeStationId==0 || m.ChargeStationId== ChargeStationId)
+                             join st in dbContext.ChargeStations.Where(m => ChargeStationId == 0 || m.ChargeStationId == ChargeStationId)
                              on cp.ChargeStationId equals st.ChargeStationId
-                             join ow in dbContext.Owners.Where(m=>m.OwnerId== OwnerId)
+                             join ow in dbContext.Owners.Where(m => m.OwnerId == OwnerId)
                              on st.OwnerId equals ow.OwnerId
                              select t
                            ).ToList();
                 //var getModel = dbContext.Transactions.Where(m => m.ChargePointId == ChargePointId || ChargePointId == "0").ToList();
                 var getModel = model.Where(m => m.ChargePointId == ChargePointId || ChargePointId == "0").ToList();
-                getModel = getModel.Where(m => m.StartTime.Date >= myTimeFrom.Date && m.StartTime.Date <= myTimeTo.Date).OrderByDescending(m=>m.StartTime).ToList();
+                getModel = getModel.Where(m => m.StartTime.Date >= myTimeFrom.Date && m.StartTime.Date <= myTimeTo.Date).OrderByDescending(m => m.StartTime).ToList();
                 List<api_Transaction> lstapi_Transactions = new List<api_Transaction>();
 
                 foreach (var item in getModel)
@@ -317,13 +309,13 @@ namespace FocusEV.OCPP.Management.Controllers
                         api_Transaction.TotalValue = totalMeter;
                         lstapi_Transactions.Add(api_Transaction);
                     }
-                 
+
                 }
                 return PartialView(lstapi_Transactions);
             }
         }
-        
-        public IActionResult SearchDataIndex( string FromDate, string ToDate)
+
+        public IActionResult SearchDataIndex(string FromDate, string ToDate)
         {
             using (OCPPCoreContext dbContext = new OCPPCoreContext(this.Config))
             {
@@ -344,7 +336,7 @@ namespace FocusEV.OCPP.Management.Controllers
                 {
                     var getlist = dbContext.Transactions.Where(m => m.StartTime >= myTimeFrom && m.StartTime <= myTimeTo).Where(m => m.ChargePointId == item.ChargePointId && m.ConnectorId == item.ConnectorId).ToList();
                     item.MeterStop = Math.Round(double.Parse(getlist.Sum(m => (m.MeterStop - m.MeterStart)).ToString()), 2);
-                } 
+                }
                 return PartialView(groupbyTransaction);
             }
         }
@@ -358,12 +350,43 @@ namespace FocusEV.OCPP.Management.Controllers
                     var model = dbContext.ChargeStations.Where(m => m.OwnerId == OwnerId).ToList();
                     return PartialView(model);
                 }
+                else if (OwnerId == 3)
+                {
+                    var model = dbContext.ChargeStations.Where(m => m.OwnerId == OwnerId).ToList();
+                    return PartialView(model);
+                }
+                else if (OwnerId == 5)
+                {
+                    var model = dbContext.ChargeStations.Where(m => m.OwnerId == OwnerId).ToList();
+                    return PartialView(model);
+                }
+                else if (OwnerId == 6)
+                {
+                    var model = dbContext.ChargeStations.Where(m => m.OwnerId == OwnerId).ToList();
+                    return PartialView(model);
+                }
+                else if (OwnerId == 7)
+                {
+                    var model = dbContext.ChargeStations.Where(m => m.OwnerId == OwnerId).ToList();
+                    return PartialView(model);
+                }
+                else if (OwnerId == 8)
+                {
+                    var model = dbContext.ChargeStations.Where(m => m.OwnerId == OwnerId).ToList();
+                    return PartialView(model);
+                }
+                else if (OwnerId == 9)
+                {
+                    var model = dbContext.ChargeStations.Where(m => m.OwnerId == OwnerId).ToList();
+                    return PartialView(model);
+                }
+
                 else
                 {
                     var model = dbContext.ChargeStations.ToList();
                     return PartialView(model);
                 }
-               // var model = dbContext.ChargeStations.Where(m=>m.OwnerId==OwnerId).ToList();
+                // var model = dbContext.ChargeStations.Where(m=>m.OwnerId==OwnerId).ToList();
                 //return PartialView(model);
             }
         }
@@ -371,7 +394,7 @@ namespace FocusEV.OCPP.Management.Controllers
         {
             using (OCPPCoreContext dbContext = new OCPPCoreContext(this.Config))
             {
-                var model = dbContext.ChargePoints.Where(m => m.ChargeStationId == ChargeStationId || ChargeStationId==0).ToList();
+                var model = dbContext.ChargePoints.Where(m => m.ChargeStationId == ChargeStationId || ChargeStationId == 0).ToList();
                 return PartialView(model);
             }
         }
@@ -387,7 +410,7 @@ namespace FocusEV.OCPP.Management.Controllers
         {
             return View();
         }
-          
+
 
     }
 }

@@ -1,4 +1,5 @@
-﻿using FocusEV.OCPP.Database;
+﻿
+using FocusEV.OCPP.Database;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -684,7 +685,7 @@ namespace FocusEV.OCPP.API.Controllers
                                      ConnectorId=t.ConnectorId,
                                      StartTagId=t.StartTagId,
                                      StartTime=t.StartTime,
-                                     MeterStart=t.MeterStart,
+                                     MeterStart = (double)t.MeterStart,
                                      StartResult=t.StartResult,
                                      StopTagId=t.StopTagId,
                                      StopTime=t.StopTime,
@@ -734,7 +735,7 @@ namespace FocusEV.OCPP.API.Controllers
                                      ConnectorId = t.ConnectorId,
                                      StartTagId = t.StartTagId,
                                      StartTime = t.StartTime,
-                                     MeterStart = t.MeterStart,
+                                     MeterStart = (double) t.MeterStart,
                                      StartResult = t.StartResult,
                                      StopTagId = t.StopTagId,
                                      StopTime = t.StopTime,
@@ -1941,7 +1942,7 @@ namespace FocusEV.OCPP.API.Controllers
                         var gettransaction = dbContext.Transactions.ToList().Where(m => m.StopTagId == null).LastOrDefault();
                         if (gettransaction != null)
                         {
-                            getMeterValue.Energy = Math.Round((double.Parse(getMeterValue.Energy) - gettransaction.MeterStart),2).ToString();
+                            getMeterValue.Energy = Math.Round((decimal)(double.Parse(getMeterValue.Energy) - gettransaction.MeterStart), 2).ToString();
                         }
                     }
                     getMeterValue.Power = getsplit[1]=="0"?"-1":getsplit[1];

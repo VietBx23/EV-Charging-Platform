@@ -186,6 +186,7 @@ namespace FocusEV.OCPP.Management.Controllers
         {
             try
             {
+                // Kiểm tra nếu người dùng không phải admin
                 if (User != null && !User.IsInRole(Constants.AdminRoleName))
                 {
                     Logger.LogWarning("ChargeTag: Request by non-administrator: {0}", User?.Identity?.Name);
@@ -200,7 +201,42 @@ namespace FocusEV.OCPP.Management.Controllers
                 using (OCPPCoreContext dbContext = new OCPPCoreContext(this.Config))
                 {
                     Logger.LogTrace("ChargeTag: Loading charge tags...");
-                    List<ChargeTag> dbChargeTags = dbContext.ChargeTags.ToList<ChargeTag>();
+
+                    // Kiểm tra tài khoản goev, nếu đúng, chỉ lấy ChargeTags có ChargeStation.OwnerId = 5
+                    List<ChargeTag> dbChargeTags;
+
+                    // Lấy username hiện tại
+                    var username = User.Identity.Name;
+
+                    // Kiểm tra nếu username là "admin", hiển thị tất cả
+                    if (username == "admin")
+                    {
+                        Logger.LogInformation("ChargeTag: Admin user detected, displaying all charge tags.");
+                        dbChargeTags = dbContext.ChargeTags.ToList();
+                    }
+                    else
+                    {
+                        // Lấy OwnerId dựa trên username
+                        int? ownerId = dbContext.Accounts
+                                                .Where(user => user.UserName == username)
+                                                .Select(user => user.OwnerId)
+                                                .FirstOrDefault();
+
+                        // Kiểm tra và lọc ChargeTags dựa trên OwnerId
+                        if (ownerId.HasValue)
+                        {
+                            Logger.LogInformation($"ChargeTag: Filtering charge tags for user {username} with OwnerId = {ownerId.Value}");
+                            dbChargeTags = dbContext.ChargeTags
+                                                    .Where(tag => tag.ChargeStationVtl.OwnerId == ownerId.Value)
+                                                    .ToList();
+                        }
+                        else
+                        {
+                            Logger.LogInformation($"ChargeTag: No specific OwnerId for user {username}, displaying all charge tags.");
+                            dbChargeTags = dbContext.ChargeTags.ToList();
+                        }
+                    }
+
 
                     Logger.LogInformation("ChargeTag: Found {0} charge tags", dbChargeTags.Count);
 
@@ -250,7 +286,7 @@ namespace FocusEV.OCPP.Management.Controllers
 
                             if (string.IsNullOrEmpty(errorMsg))
                             {
-                                // Save tag in DB
+                                // Save new tag in DB
                                 ChargeTag newTag = new ChargeTag();
                                 newTag.TagId = ctvm.TagId;
                                 newTag.TagName = ctvm.TagName;
@@ -288,8 +324,8 @@ namespace FocusEV.OCPP.Management.Controllers
                             currentChargeTag.TagState = ctvm.TagState;
                             dbContext.SaveChanges();
                             Logger.LogInformation("ChargeTag: Edit => charge tag saved: {0} / {1}", ctvm.TagId, ctvm.TagName);
-                            //return RedirectToAction("ChargeCard", new { Id = "" });
                         }
+
                         return RedirectToAction("ChargeCard", new { Id = "" });
                     }
                     else
@@ -299,7 +335,37 @@ namespace FocusEV.OCPP.Management.Controllers
                         ctvm.ChargeTags = dbChargeTags;
                         ctvm.CurrentTagId = Id;
 
-                        ViewBag.ChargeStationList = dbContext.ChargeStations.ToList();
+                     
+
+                        // Kiểm tra nếu username là "admin", hiển thị tất cả trạm sạc
+                        if (username.Equals("admin", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Logger.LogInformation("ChargeStation: Admin user detected, displaying all charge stations.");
+                            ViewBag.ChargeStationList = dbContext.ChargeStations.ToList();
+                        }
+                        else
+                        {
+                            // Lấy OwnerId dựa trên username
+                            int? ownerId = dbContext.Accounts
+                                                    .Where(user => user.UserName == username)
+                                                    .Select(user => user.OwnerId)
+                                                    .FirstOrDefault();
+
+                            // Kiểm tra và lọc ChargeStations dựa trên OwnerId
+                            if (ownerId.HasValue)
+                            {
+                                Logger.LogInformation($"ChargeStation: Filtering charge stations for user {username} with OwnerId = {ownerId.Value}");
+                                ViewBag.ChargeStationList = dbContext.ChargeStations
+                                                                     .Where(cs => cs.OwnerId == ownerId.Value)
+                                                                     .ToList();
+                            }
+                            else
+                            {
+                                Logger.LogInformation($"ChargeStation: No specific OwnerId for user {username}, displaying all charge stations.");
+                                ViewBag.ChargeStationList = dbContext.ChargeStations.ToList();
+                            }
+                        }
+
 
                         if (currentChargeTag != null)
                         {
@@ -312,9 +378,10 @@ namespace FocusEV.OCPP.Management.Controllers
                             ctvm.SideId = currentChargeTag.SideId;
                             ctvm.ChargeStationId = currentChargeTag.ChargeStationId;
                             ctvm.TagDescription = currentChargeTag.TagDescription;
-                            ctvm.TagType = ctvm.TagType;
+                            ctvm.TagType = currentChargeTag.TagType;
                             ctvm.TagState = currentChargeTag.TagState;
                         }
+
                         return View(ctvm);
                     }
                 }
@@ -328,11 +395,12 @@ namespace FocusEV.OCPP.Management.Controllers
         }
 
 
+
         public IActionResult ChangePassword()
 
         {
             OCPPCoreContext dbContext = new OCPPCoreContext(this.Config);
-            var UserApps = dbContext.UserApps.Where(m => m.OwnerId == 1).ToList();
+            var UserApps = dbContext.UserApps.Where(m => m.OwnerId == 1 || m.OwnerId !=1  ).ToList();
             return View(UserApps);
         }
         [HttpPost]

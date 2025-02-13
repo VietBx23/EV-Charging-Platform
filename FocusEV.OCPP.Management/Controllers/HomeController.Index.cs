@@ -12,22 +12,27 @@ using Newtonsoft.Json;
 using FocusEV.OCPP.Database;
 using FocusEV.OCPP.Management.Models;
 using System.Net.WebSockets;
+using FocusEV.OCPP.Management.Services;
 
 namespace FocusEV.OCPP.Management.Controllers
 {
     public partial class HomeController : BaseController
     {
         private readonly IStringLocalizer<HomeController> _localizer;
-
+        private readonly EmailService _emailService;
         public HomeController(
-            UserManager userManager,
-            IStringLocalizer<HomeController> localizer,
-            ILoggerFactory loggerFactory,
-            IConfiguration config) : base(userManager, loggerFactory, config)
+     UserManager userManager,
+     IStringLocalizer<HomeController> localizer,
+     ILoggerFactory loggerFactory,
+     EmailService emailService,  // EmailService is injected here
+     IConfiguration config)
+     : base(userManager, loggerFactory, config)
         {
             _localizer = localizer;
+            _emailService = emailService;  // Save the injected service
             Logger = loggerFactory.CreateLogger<HomeController>();
         }
+
         //[Route("ReturnUrl")]
         //public ActionResult ReturnUrl(string vnp_Amount,string vnp_BankCode,string vnp_BankTranNo,string vnp_CardType,string vnp_OrderInfo,string vnp_PayDate,string vnp_ResponseCode,string vnp_TmnCode,string vnp_TransactionNo,string vnp_TransactionStatus,string vnp_TxnRef,string vnp_SecureHash)
         //{
@@ -82,7 +87,7 @@ namespace FocusEV.OCPP.Management.Controllers
 
         [Authorize]
         public async Task<IActionResult> Index()
-        
+
         {
             long n = long.Parse(DateTime.Now.ToString("yyyyMMddHHmmss"));
             Logger.LogTrace("Index: Loading charge points with latest transactions...");
@@ -133,14 +138,14 @@ namespace FocusEV.OCPP.Management.Controllers
 
                                     if (onlineStatusList != null)
                                     {
-                                        foreach(ChargePointStatus cps in onlineStatusList)
+                                        foreach (ChargePointStatus cps in onlineStatusList)
                                         {
                                             if (!dictOnlineStatus.TryAdd(cps.Id, cps))
                                             {
                                                 Logger.LogError("Index: Online charge point status (ID={0}) could not be added to dictionary", cps.Id);
                                             }
                                         }
-                                    }   
+                                    }
                                 }
                                 else
                                 {
@@ -171,19 +176,19 @@ namespace FocusEV.OCPP.Management.Controllers
                 #endregion
 
                 using (OCPPCoreContext dbContext = new OCPPCoreContext(this.Config))
-                { 
+                {
                     // List of charge point status (OCPP messages) with latest transaction (if one exist)
                     List<ConnectorStatusView> connectorStatusViewList = dbContext.ConnectorStatusViews.ToList<ConnectorStatusView>();
 
                     // Count connectors for every charge point (=> naming scheme)
                     Dictionary<string, int> dictConnectorCount = new Dictionary<string, int>();
-                    foreach(ConnectorStatusView csv in connectorStatusViewList)
+                    foreach (ConnectorStatusView csv in connectorStatusViewList)
                     {
                         if (dictConnectorCount.ContainsKey(csv.ChargePointId))
                         {
                             // > 1 connector
                             dictConnectorCount[csv.ChargePointId] = dictConnectorCount[csv.ChargePointId] + 1;
-                        }   
+                        }
                         else
                         {
                             // first connector
@@ -197,7 +202,7 @@ namespace FocusEV.OCPP.Management.Controllers
                     if (dbChargePoints != null)
                     {
                         // Iterate through all charge points in database
-                        foreach(ChargePoint cp in dbChargePoints)
+                        foreach (ChargePoint cp in dbChargePoints)
                         {
                             ChargePointStatus cpOnlineStatus = null;
                             dictOnlineStatus.TryGetValue(cp.ChargePointId, out cpOnlineStatus);
@@ -300,7 +305,7 @@ namespace FocusEV.OCPP.Management.Controllers
                                                 cpovm.CurrentChargeData = currentCharge;
                                             }
                                         }
-                                        cpovm.MessageLog = dbContext.MessageLogs.ToList().Where(m => m.ChargePointId == cpovm.ChargePointId && m.Message== "MeterValues").LastOrDefault();
+                                        cpovm.MessageLog = dbContext.MessageLogs.ToList().Where(m => m.ChargePointId == cpovm.ChargePointId && m.Message == "MeterValues").LastOrDefault();
                                         overviewModel.ChargePoints.Add(cpovm);
                                     }
                                 }
@@ -344,20 +349,118 @@ namespace FocusEV.OCPP.Management.Controllers
         }
 
         [Authorize]
+        // public async Task<IActionResult> IndexNew()
+        //{
+        //    using (OCPPCoreContext dbContext = new OCPPCoreContext(this.Config))
+        //   {
+        //         var model = dbContext.ConnectorStatuses.ToList();
+
+        //         var currentUsername = User.Identity.Name;
+
+        //         // Log giá trị của username
+        //         Logger.LogInformation("Current Username: {Username}", currentUsername);
+
+        //         List<ChargePoint> dbChargePoints;
+
+        //         if (currentUsername == "admin")
+        //         {
+        //             // Nếu là admin, hiển thị tất cả ChargePoints với OwnerId != 4
+        //             dbChargePoints = dbContext.ChargePoints
+        //                                       .Where(m => m.OwnerId != 4)
+        //                                       .ToList();
+        //         }
+        //         else
+        //         {
+        //             // Tìm OwnerId trong bảng Accounts dựa trên username
+        //             var owner = dbContext.Accounts.FirstOrDefault(a => a.UserName == currentUsername);
+
+        //             if (owner != null)
+        //             {
+        //                 // Nếu tìm thấy tài khoản, lấy ChargePoints dựa trên OwnerId
+        //                 dbChargePoints = dbContext.ChargePoints
+        //                                           .Where(cp => cp.OwnerId == owner.OwnerId)
+        //                                           .ToList();
+        //             }
+        //             else
+        //             {
+        //                 // Nếu không tìm thấy tài khoản, trả về danh sách trống hoặc xử lý mặc định
+        //                 dbChargePoints = new List<ChargePoint>();
+        //                 Logger.LogWarning("No matching account found for username: {Username}", currentUsername);
+        //             }
+        //         }
+
+        //         /* List<ChargePoint> dbChargePoints = dbContext.ChargePoints.Where(m => m.OwnerId != 4).ToList<ChargePoint>().ToList();*/
+        //         List<ChargePointsOverviewViewModel> lstChargePointsOverviewViewModel = new List<ChargePointsOverviewViewModel>();
+        //         foreach (var item in model)
+        //         {
+        //             ChargePointsOverviewViewModel cpovm = new ChargePointsOverviewViewModel();
+        //             var getcp = dbChargePoints.Where(m => m.ChargePointId == item.ChargePointId).FirstOrDefault();
+        //             cpovm.ChargePointId = item.ChargePointId;
+        //             if (getcp != null)
+        //                 cpovm.Name = $"{getcp.Name}:{item.ConnectorId}";
+        //             var getlast = model.Where(m => m.ChargePointId == cpovm.ChargePointId).LastOrDefault();
+        //             if (getlast != null && getlast.lastSeen.HasValue)
+        //             {
+        //               cpovm.Online = (DateTime.Now - getlast.lastSeen.Value).TotalMinutes <= 8 ? true : false;
+        //             }
+        //             else
+        //             {
+        //                cpovm.Online = false;
+        //             }
+        //             if (item.LastStatus == "Available")
+        //                cpovm.ConnectorStatus = ConnectorStatusEnum.Available;
+        //            if (item.LastStatus == "Occupied")
+        //                cpovm.ConnectorStatus = ConnectorStatusEnum.Occupied;
+        //            //
+        //             if (getcp != null)
+        //                lstChargePointsOverviewViewModel.Add(cpovm);
+        //         }
+        //         return View(lstChargePointsOverviewViewModel);
+        //     }
+        // }
+        // [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        // public IActionResult Error()
+        // {
+        //     return View();
+        // }
+
+        [Authorize]
         public async Task<IActionResult> IndexNew()
         {
             using (OCPPCoreContext dbContext = new OCPPCoreContext(this.Config))
             {
                 var model = dbContext.ConnectorStatuses.ToList();
-                List<ChargePoint> dbChargePoints = dbContext.ChargePoints.Where(m=>m.OwnerId!=4).ToList<ChargePoint>().ToList();
+                var currentUsername = User.Identity.Name;
+
+                // Log giá trị của username
+                Logger.LogInformation("Current Username: {Username}", currentUsername);
+
+                List<ChargePoint> dbChargePoints;
+
+                if (currentUsername == "admin")
+                {
+                    dbChargePoints = dbContext.ChargePoints
+                                               .Where(m => m.OwnerId != 4)
+                                               .ToList();
+                }
+                else
+                {
+                    var owner = dbContext.Accounts.FirstOrDefault(a => a.UserName == currentUsername);
+                    dbChargePoints = owner != null
+                        ? dbContext.ChargePoints.Where(cp => cp.OwnerId == owner.OwnerId).ToList()
+                        : new List<ChargePoint>();
+                }
+
                 List<ChargePointsOverviewViewModel> lstChargePointsOverviewViewModel = new List<ChargePointsOverviewViewModel>();
                 foreach (var item in model)
                 {
                     ChargePointsOverviewViewModel cpovm = new ChargePointsOverviewViewModel();
                     var getcp = dbChargePoints.Where(m => m.ChargePointId == item.ChargePointId).FirstOrDefault();
-                    cpovm.ChargePointId= item.ChargePointId;
-                    if(getcp!=null)
-                    cpovm.Name = $"{getcp.Name}:{item.ConnectorId}";
+                    cpovm.ChargePointId = item.ChargePointId;
+
+                    if (getcp != null)
+                        cpovm.Name = $"{getcp.Name}:{item.ConnectorId}";
+
                     var getlast = model.Where(m => m.ChargePointId == cpovm.ChargePointId).LastOrDefault();
                     if (getlast != null && getlast.lastSeen.HasValue)
                     {
@@ -365,7 +468,90 @@ namespace FocusEV.OCPP.Management.Controllers
                     }
                     else
                     {
-                        cpovm.Online =false;
+                        cpovm.Online = false;
+                    }
+
+                    Logger.LogInformation("ChargePoint {ChargePointName} Status: {Status}, LastSeen: {LastSeen}, Online: {Online}", cpovm.Name, item.LastStatus, getlast?.lastSeen, cpovm.Online);
+
+                    if (item.LastStatus == "Available")
+                        cpovm.ConnectorStatus = ConnectorStatusEnum.Available;
+                    if (item.LastStatus == "Occupied")
+                        cpovm.ConnectorStatus = ConnectorStatusEnum.Occupied;
+
+                    // Gửi email nếu trạng thái thay đổi từ offline sang online
+                    if (cpovm.Online && getlast != null && getlast.lastSeen.HasValue)
+                    {
+                        bool wasOffline = (DateTime.Now - getlast.lastSeen.Value).TotalMinutes > 8;
+
+                        if (wasOffline)
+                        {
+                            string chargePointName = getcp.Name;
+                            string status = "Online";
+
+                            // Gửi email thông báo
+                            Logger.LogInformation("Sending email for ChargePoint {ChargePointName} status change: {OldStatus} -> {NewStatus}", chargePointName, "Offline", status);
+                            await _emailService.SendChargePointStatusEmail(chargePointName, status);
+
+                            // Log việc gửi email
+                            Logger.LogInformation("Email sent for ChargePoint status change: {ChargePointName} to {NewStatus}", chargePointName, status);
+                        }
+                    }
+
+                    // Gửi email nếu trạng thái thay đổi từ online sang offline
+                    if (!cpovm.Online && getlast != null && getlast.lastSeen.HasValue)
+                    {
+                        bool wasOnline = (DateTime.Now - getlast.lastSeen.Value).TotalMinutes <= 8;
+
+                        if (wasOnline)
+                        {
+                            string chargePointName = getcp.Name;
+                            string status = "Offline";
+
+                            // Gửi email thông báo
+                            Logger.LogInformation("Sending email for ChargePoint {ChargePointName} status change: {OldStatus} -> {NewStatus}", chargePointName, "Online", status);
+                            await _emailService.SendChargePointStatusEmail(chargePointName, status);
+
+                            // Log việc gửi email
+                            Logger.LogInformation("Email sent for ChargePoint status change: {ChargePointName} to {NewStatus}", chargePointName, status);
+                        }
+                    }
+
+                    if (getcp != null)
+                        lstChargePointsOverviewViewModel.Add(cpovm);
+                }
+
+                return View(lstChargePointsOverviewViewModel);
+            }
+        }
+
+
+
+
+
+
+        [Authorize]
+        public async Task<IActionResult> IndexGoev()
+        {
+            using (OCPPCoreContext dbContext = new OCPPCoreContext(this.Config))
+            {
+                var model = dbContext.ConnectorStatuses.ToList();
+                List<ChargePoint> dbChargePoints = dbContext.ChargePoints.Where(m => m.OwnerId != 4).ToList<ChargePoint>().ToList();
+                List<ChargePointsOverviewViewModel> lstChargePointsOverviewViewModel = new List<ChargePointsOverviewViewModel>();
+                foreach (var item in model)
+                {
+                    ChargePointsOverviewViewModel cpovm = new ChargePointsOverviewViewModel();
+                    var getcp = dbChargePoints.Where(m => m.ChargePointId == item.ChargePointId).FirstOrDefault();
+                    cpovm.ChargePointId = item.ChargePointId;
+                    if (getcp != null)
+                        cpovm.Name = $"{getcp.Name}:{item.ConnectorId}";
+                    var getlast = model.Where(m => m.ChargePointId == cpovm.ChargePointId).LastOrDefault();
+                    if (getlast != null && getlast.lastSeen.HasValue)
+                    {
+                        cpovm.Online = (DateTime.Now - getlast.lastSeen.Value).TotalMinutes <= 8 ? true : false;
+                    }
+                    else
+                    {
+                        cpovm.Online = false;
                     }
                     if (item.LastStatus == "Available")
                         cpovm.ConnectorStatus = ConnectorStatusEnum.Available;
@@ -379,9 +565,11 @@ namespace FocusEV.OCPP.Management.Controllers
             }
         }
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
+        public IActionResult ErrorGoev()
         {
             return View();
         }
+
+
     }
 }

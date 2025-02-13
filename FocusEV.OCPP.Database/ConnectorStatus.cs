@@ -11,7 +11,7 @@ namespace FocusEV.OCPP.Database
     {
         public string ChargePointId { get; set; }
         public int ConnectorId { get; set; }
-
+        //public int OwnerId { get; set; }
         public string ConnectorName { get; set; }
 
         public string LastStatus { get; set; }

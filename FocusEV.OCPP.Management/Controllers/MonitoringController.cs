@@ -15,19 +15,22 @@ using FocusEV.OCPP.Management.Models.Api;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Http.Headers;
 using System.Text;
+using FocusEV.OCPP.Management.Services;
 
 namespace FocusEV.OCPP.Management.Controllers
 {
     public partial class MonitoringController : BaseController
     {
         private readonly IStringLocalizer<MonitoringController> _localizer;
-
+        private readonly EmailService _emailService;
         public MonitoringController(
             UserManager userManager,
             IStringLocalizer<MonitoringController> localizer,
             ILoggerFactory loggerFactory,
+            EmailService emailService,
             IConfiguration config) : base(userManager, loggerFactory, config)
         {
+            _emailService = emailService;
             _localizer = localizer;
             Logger = loggerFactory.CreateLogger<MonitoringController>();
         }
@@ -314,36 +317,153 @@ namespace FocusEV.OCPP.Management.Controllers
         //    return View();
         //}
 
+        /*    public IActionResult ChargePointConnectionLogs()
+            {
+                using (OCPPCoreContext dbContext = new OCPPCoreContext(this.Config))
+                {
+                    var model = dbContext.MessageLogs.Where(m=>m.Message!= "Heartbeat" && m.Message!= "MeterValues" && m.Message!= "BootNotification" && m.Message != "StatusNotification").OrderByDescending(o => o.LogId).ToList();
+                    return View(model);
+                }
+            }*/
+
         public IActionResult ChargePointConnectionLogs()
         {
             using (OCPPCoreContext dbContext = new OCPPCoreContext(this.Config))
             {
-                var model = dbContext.MessageLogs.Where(m=>m.Message!= "Heartbeat" && m.Message!= "MeterValues" && m.Message!= "BootNotification" && m.Message != "StatusNotification").OrderByDescending(o => o.LogId).ToList();
+                // Lấy danh sách log
+                IQueryable<MessageLog> logsQuery = dbContext.MessageLogs
+    .Where(m =>
+        (m.Message != "Heartbeat" &&
+         m.Message != "MeterValues" &&
+         m.Message != "BootNotification" &&
+         m.Message != "StatusNotification") ||
+        (m.Message == "StatusNotification" &&
+         m.Result.Contains("Info=OtherReason") &&
+         m.Result.Contains("Status=SuspendedEVSE")))
+    .Take(500);  // Lấy tối đa 200 bản ghi
+
+
+                // Kiểm tra người dùng và áp dụng logic lọc
+                if (User.Identity.Name == "goev")
+                {
+                    logsQuery = logsQuery.Where(m => m.ChargePointId.StartsWith("GOEV"));
+                }
+                else if (User.Identity.Name == "adminbinhphuoc")
+                {
+                    logsQuery = logsQuery.Where(m => m.ChargePointId.StartsWith("FC-BPH"));
+                }
+                else if (User.Identity.Name == "inewsolar")
+                {
+                    logsQuery = logsQuery.Where(m => m.ChargePointId.StartsWith("FC-KHO"));
+                }
+
+                // Lấy thời gian hiện tại và tính toán thời gian trong quá khứ (ví dụ: 10 phút trước)
+                var currentTime = DateTime.UtcNow;
+                var pastTime = currentTime.AddMinutes(-10); // Lấy log trong 10 phút qua
+
+                // Kiểm tra các log với trạng thái bất thường trong thời gian hiện tại
+                var specialLogs = logsQuery
+                    .Where(m => m.Message == "StatusNotification" &&
+                                m.Result.Contains("Info=OtherReason") &&
+                                m.Result.Contains("Status=SuspendedEVSE") &&
+                                m.LogTime >= pastTime) // Chỉ lấy log trong 10 phút qua
+                    .ToList();
+
+                if (specialLogs.Any())
+                {
+                    // Gửi email thông báo lỗi cho kỹ thuật viên
+                    foreach (var log in specialLogs)
+                    {
+                        var chargePointName = log.ChargePointId; // Lấy ChargePointId từ log
+                        var errorDetails = log.Result; // Thông tin lỗi (hoặc trạng thái)
+
+                        // Gửi email với chi tiết lỗi
+                        _emailService.SendChargePointErrorNotificationEmail(chargePointName, errorDetails).Wait();
+                    }
+                }
+
+                // Trả về dữ liệu logs
+                var model = logsQuery
+                    .OrderByDescending(o => o.LogId)
+                    .ToList();
+
                 return View(model);
             }
         }
+
 
         public IActionResult ChargeCardRecord()
         {
             using (OCPPCoreContext dbContext = new OCPPCoreContext(this.Config))
             {
-                var getmodel = dbContext.Transactions.OrderByDescending(m=>m.TransactionId).ToList();
+                var transactions = dbContext.Transactions.OrderByDescending(m => m.TransactionId).ToList();
                 List<api_Transaction> lstapi_Transactions = new List<api_Transaction>();
-                foreach(var item in getmodel)
+
+                foreach (var item in transactions)
                 {
-                    api_Transaction api_Transaction = new api_Transaction();
-                    api_Transaction.Transaction = item;
-                    api_Transaction.Customer = dbContext.Customers.Where(m => m.TagId == item.StartTagId).FirstOrDefault();
-                    api_Transaction.ChargeTag = dbContext.ChargeTags.Where(m => m.TagId == item.StartTagId).FirstOrDefault();
-                    api_Transaction.ChargePoint = dbContext.ChargePoints.Where(m => m.ChargePointId == item.ChargePointId).FirstOrDefault();
-                    lstapi_Transactions.Add(api_Transaction);
+                    // Tạo một đối tượng api_Transaction
+                    api_Transaction api_Transaction = new api_Transaction
+                    {
+                        Transaction = item,
+                        Customer = dbContext.Customers.FirstOrDefault(m => m.TagId == item.StartTagId),
+                        ChargeTag = dbContext.ChargeTags.FirstOrDefault(m => m.TagId == item.StartTagId),
+                        ChargePoint = dbContext.ChargePoints.FirstOrDefault(m => m.ChargePointId == item.ChargePointId)
+                    };
+
+                    // Kiểm tra tài khoản người dùng
+                    if (User.Identity.Name.Equals("goev", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Chỉ thêm vào danh sách nếu ChargePoint có tên bắt đầu bằng "GOEV"
+                        if (api_Transaction.ChargePoint != null && api_Transaction.ChargePoint.Name.StartsWith("GOEV", StringComparison.OrdinalIgnoreCase))
+                        {
+                            lstapi_Transactions.Add(api_Transaction);
+                        }
+                    }
+                    else if (User.Identity.Name.Equals("adminbinhphuoc", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Chỉ thêm vào danh sách nếu ChargePoint có tên bắt đầu bằng "GOEV"
+                        if (api_Transaction.ChargePoint != null && api_Transaction.ChargePoint.Name.StartsWith("FC-BPH", StringComparison.OrdinalIgnoreCase))
+                        {
+                            lstapi_Transactions.Add(api_Transaction);
+                        }
+                    }
+                    else if (User.Identity.Name.Equals("inewsolar", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Chỉ thêm vào danh sách nếu ChargePoint có tên bắt đầu bằng "GOEV"
+                        if (api_Transaction.ChargePoint != null && api_Transaction.ChargePoint.Name.StartsWith("FC-KHO", StringComparison.OrdinalIgnoreCase))
+                        {
+                            lstapi_Transactions.Add(api_Transaction);
+                        }
+                    }
+                    else if (User.Identity.Name.Equals("adminbinhthuan", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Chỉ thêm vào danh sách nếu ChargePoint có tên bắt đầu bằng "GOEV"
+                        if (api_Transaction.ChargePoint != null && api_Transaction.ChargePoint.Name.StartsWith("FC-BTH", StringComparison.OrdinalIgnoreCase))
+                        {
+                            lstapi_Transactions.Add(api_Transaction);
+                        }
+                    }
+                    else if (User.Identity.Name.Equals("adminletsgo", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Chỉ thêm vào danh sách nếu ChargePoint có tên bắt đầu bằng "GOEV"
+                        if (api_Transaction.ChargePoint != null && api_Transaction.ChargePoint.Name.StartsWith("LGO-PHY", StringComparison.OrdinalIgnoreCase))
+                        {
+                            lstapi_Transactions.Add(api_Transaction);
+                        }
+                    }
+                    else
+                    {
+                        // Nếu không phải tài khoản "goev", thêm tất cả giao dịch vào danh sách
+                        lstapi_Transactions.Add(api_Transaction);
+                    }
                 }
+
                 return View(lstapi_Transactions);
             }
-              
         }
 
-      
+
+
         public IActionResult VNPayMonitoring()
         {
             using (OCPPCoreContext dbContext = new OCPPCoreContext(this.Config))
@@ -353,14 +473,14 @@ namespace FocusEV.OCPP.Management.Controllers
                              on us.Id equals dp.UserAppId
                              join log in dbContext.VnpIPNLogs
                              on dp.DepositCode equals log.vnp_TxnRef
-                             where dp.Message== "Nạp tiền từ VNPay"
+                             where dp.Message == "Nạp tiền từ VNPay"
                              select new VNPayMonitor()
                              {
                                  UserApp = us,
                                  DepositHistory = dp,
                                  VnpIPNLog = log
                              }
-                             ).OrderByDescending(m=>m.DepositHistory.DateCreate).ToList();
+                             ).OrderByDescending(m => m.DepositHistory.DateCreate).ToList();
                 ViewBag.TotalSucess = model.Where(m => m.VnpIPNLog.vnp_ResponseCode == "00").Sum(m => m.DepositHistory.Amount);
                 return View(model);
             }
@@ -369,17 +489,48 @@ namespace FocusEV.OCPP.Management.Controllers
         {
             using (OCPPCoreContext dbContext = new OCPPCoreContext(this.Config))
             {
+                // Lấy thông tin user hiện tại
+                var currentUser = User.Identity.Name; // Điều chỉnh nếu bạn đang dùng một phương pháp khác để lấy thông tin người dùng
+
+                // Tạo model chứa các bản ghi
                 var model = (from sq in dbContext.StaticQRIPNLogs
                              join cn in dbContext.ConnectorStatuses
-                             //on sq.terminalId equals cn.ChargePointId
                              on sq.terminalId equals cn.terminalId
                              select new QRCodeMonitor()
                              {
-                                 ConnectorStatus =cn,
-                                 StaticQRIPNLog= sq,
-                                 hasTransaction =""
+                                 ConnectorStatus = cn,
+                                 StaticQRIPNLog = sq,
+                                 hasTransaction = ""
                              }
                              ).OrderByDescending(p => p.StaticQRIPNLog.IpnId).ToList();
+
+                // Kiểm tra người dùng đăng nhập và lọc kết quả nếu là 'goev'
+                if (currentUser != null && currentUser.ToLower().Contains("goev")) // Hoặc bất kỳ logic nào bạn muốn sử dụng để xác định người dùng "goev"
+                {
+                    // Chỉ giữ lại những bản ghi có ChargePointId bắt đầu bằng "GOEV"
+                    model = model.Where(m => m.ConnectorStatus.ChargePointId.StartsWith("GOEV")).ToList();
+                }
+                else if (currentUser != null && currentUser.ToLower().Contains("adminbinhphuoc")) // Hoặc bất kỳ logic nào bạn muốn sử dụng để xác định người dùng "goev"
+                {
+                    // Chỉ giữ lại những bản ghi có ChargePointId bắt đầu bằng "GOEV"
+                    model = model.Where(m => m.ConnectorStatus.ChargePointId.StartsWith("FC-BPH")).ToList();
+                }
+                else if (currentUser != null && currentUser.ToLower().Contains("inewsolar")) // Hoặc bất kỳ logic nào bạn muốn sử dụng để xác định người dùng "goev"
+                {
+                    // Chỉ giữ lại những bản ghi có ChargePointId bắt đầu bằng "GOEV"
+                    model = model.Where(m => m.ConnectorStatus.ChargePointId.StartsWith("FC-KHO")).ToList();
+                }
+                else if (currentUser != null && currentUser.ToLower().Contains("adminbinhthuan")) // Hoặc bất kỳ logic nào bạn muốn sử dụng để xác định người dùng "goev"
+                {
+                    // Chỉ giữ lại những bản ghi có ChargePointId bắt đầu bằng "GOEV"
+                    model = model.Where(m => m.ConnectorStatus.ChargePointId.StartsWith("FC-BTH")).ToList();
+                }
+                else if (currentUser != null && currentUser.ToLower().Contains("adminletsgo")) // Hoặc bất kỳ logic nào bạn muốn sử dụng để xác định người dùng "goev"
+                {
+                    // Chỉ giữ lại những bản ghi có ChargePointId bắt đầu bằng "GOEV"
+                    model = model.Where(m => m.ConnectorStatus.ChargePointId.StartsWith("FC-PYE")).ToList();
+                }
+
                 if (model != null)
                 {
                     var i = 0;
@@ -387,7 +538,9 @@ namespace FocusEV.OCPP.Management.Controllers
                     {
                         try
                         {
-                            var check = dbContext.QRTransactions.Where(p => p.qrTrace == item.StaticQRIPNLog.qrTrace).FirstOrDefault();
+                            var check = dbContext.QRTransactions
+                                                 .Where(p => p.qrTrace == item.StaticQRIPNLog.qrTrace)
+                                                 .FirstOrDefault();
                             if (check == null)
                             {
                                 item.hasTransaction = "chưa tạo đơn sạc";
@@ -398,17 +551,17 @@ namespace FocusEV.OCPP.Management.Controllers
                             }
                             i++;
                         }
-                        catch(Exception ex)
+                        catch (Exception ex)
                         {
                             var a = i;
                         }
-                       
                     }
                 }
-                
+
                 return View(model);
             }
         }
+
 
 
         public ActionResult FocusAddDeposit()
@@ -421,12 +574,12 @@ namespace FocusEV.OCPP.Management.Controllers
         }
 
         [HttpPost]
-        public async Task<bool>  AddDepositFree(string Id,decimal balance)
+        public async Task<bool> AddDepositFree(string Id, decimal balance)
         {
             try
             {
                 string apiUrl = "https://solarev-lado-api.insitu.com.vn/api/AddDeposit_free";
-                string requestBody = "{\"UserAppId\":\""+ Id+"\",\"Amount\":"+ balance+",\"PaymentGateway\":3}";
+                string requestBody = "{\"UserAppId\":\"" + Id + "\",\"Amount\":" + balance + ",\"PaymentGateway\":3}";
 
                 using (var httpClient = new HttpClient())
                 {
@@ -438,7 +591,7 @@ namespace FocusEV.OCPP.Management.Controllers
 
                     if (response.IsSuccessStatusCode)
                     {
-                        var responseContent = await response.Content.ReadAsStringAsync(); 
+                        var responseContent = await response.Content.ReadAsStringAsync();
                     }
                     else
                     {

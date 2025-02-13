@@ -1,16 +1,19 @@
-﻿    using Microsoft.AspNetCore.Mvc;
-    using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.Localization;
-    using Microsoft.Extensions.Logging;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using FocusEV.OCPP.Database;
-    using Microsoft.EntityFrameworkCore;
+﻿
+
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
+using System.Linq;
+using System.Threading.Tasks;
+using FocusEV.OCPP.Database;
+using Microsoft.EntityFrameworkCore;
 using System;
 
 
-    namespace FocusEV.OCPP.Management.Controllers
-    {
+namespace FocusEV.OCPP.Management.Controllers
+{
     public class ChargePointManagementController : BaseController
     {
         private readonly IStringLocalizer<ChargePointManagementController> _localizer;
@@ -39,18 +42,45 @@ using System;
                 DateTime startDate = new DateTime(selectedYear, selectedMonth, 1);
                 DateTime endDate = startDate.AddMonths(1).AddDays(-1);
 
-                var transactions = await dbContext.Transactions
-                    .Where(t => t.StartTime >= startDate && t.StopTime <= endDate && (t.ConnectorId == 1 || t.ConnectorId == 2))
+                IQueryable<Transaction> transactionsQuery = dbContext.Transactions
+                    .Where(t => t.StartTime >= startDate && t.StopTime <= endDate && (t.ConnectorId == 1 || t.ConnectorId == 2));
+
+                if (User.Identity != null && User.Identity.Name == "goev")
+                {
+                    // Lọc theo ChargePointId bắt đầu bằng 'GOEV' nếu tài khoản là 'goev'
+                    transactionsQuery = transactionsQuery.Where(t => t.ChargePointId.StartsWith("GOEV"));
+                }
+                else  if (User.Identity != null && User.Identity.Name == "adminbinhphuoc")
+                {
+                    // Lọc theo ChargePointId bắt đầu bằng 'GOEV' nếu tài khoản là 'goev'
+                    transactionsQuery = transactionsQuery.Where(t => t.ChargePointId.StartsWith("FC-BPH"));
+                }
+                else if (User.Identity != null && User.Identity.Name == "adminbinhthuan")
+                {
+                    // Lọc theo ChargePointId bắt đầu bằng 'GOEV' nếu tài khoản là 'goev'
+                    transactionsQuery = transactionsQuery.Where(t => t.ChargePointId.StartsWith("FC-BTH"));
+                }
+                else if (User.Identity != null && User.Identity.Name == "inewsolar")
+                {
+                    // Lọc theo ChargePointId bắt đầu bằng 'GOEV' nếu tài khoản là 'goev'
+                    transactionsQuery = transactionsQuery.Where(t => t.ChargePointId.StartsWith("FC-KHO"));
+                }
+                else if (User.Identity != null && User.Identity.Name == "adminletsgo")
+                {
+                    // Lọc theo ChargePointId bắt đầu bằng 'GOEV' nếu tài khoản là 'goev'
+                    transactionsQuery = transactionsQuery.Where(t => t.ChargePointId.StartsWith("LGO-PYE"));
+                }
+
+                var transactions = await transactionsQuery
                     .GroupBy(t => t.ChargePointId)
                     .Select(g => new ChargePointStatisticsViewModel
                     {
                         ChargePointId = g.Key,
                         kWh_Connector1 = g.Where(t => t.ConnectorId == 1)
-                  .Sum(t => (t.MeterStop ?? 0) - (t.MeterStart ?? 0)),
+                                          .Sum(t => (t.MeterStop.HasValue ? (t.MeterStop.Value - t.MeterStart) : 0) ?? 0),
                         kWh_Connector2 = g.Where(t => t.ConnectorId == 2)
-                  .Sum(t => (t.MeterStop ?? 0) - (t.MeterStart ?? 0)),
-                        Total_kWhUsed = g.Sum(t => (t.MeterStop ?? 0) - (t.MeterStart ?? 0))
-
+                                          .Sum(t => (t.MeterStop.HasValue ? (t.MeterStop.Value - t.MeterStart) : 0) ?? 0),
+                        Total_kWhUsed = g.Sum(t => (t.MeterStop.HasValue ? (t.MeterStop.Value - t.MeterStart) : 0) ?? 0)
                     })
                     .OrderBy(cp => cp.ChargePointId) // Sắp xếp theo ChargePointId
                     .ToListAsync();
@@ -62,5 +92,6 @@ using System;
                 return View(transactions);
             }
         }
+
     }
-    }
+}

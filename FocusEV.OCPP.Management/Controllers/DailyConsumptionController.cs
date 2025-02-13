@@ -35,12 +35,33 @@ namespace FocusEV.OCPP.Management.Controllers
 
             using (var dbContext = new OCPPCoreContext(_config))
             {
-                // Lấy danh sách các trụ sạc
-                var chargePoints = dbContext.Transactions
-                    .Select(t => t.ChargePointId)
-                    .Distinct()
-                    .OrderBy(id => id)
-                    .ToList();
+                IQueryable<string> chargePointsQuery = dbContext.Transactions
+           .Select(t => t.ChargePointId)
+           .Distinct();
+
+                if (User.Identity != null && User.Identity.Name == "goev")
+                {
+                    // Chỉ lấy ChargePointId bắt đầu bằng "GOEV"
+                    chargePointsQuery = chargePointsQuery.Where(id => id.StartsWith("GOEV"));
+                }
+                else if (User.Identity != null && User.Identity.Name == "adminbinhphuoc")
+                {
+                    // Chỉ lấy ChargePointId bắt đầu bằng "GOEV"
+                    chargePointsQuery = chargePointsQuery.Where(id => id.StartsWith("FC-BPH"));
+                }else if(User.Identity != null && User.Identity.Name == "adminbinhthuan")
+                {
+                    chargePointsQuery = chargePointsQuery.Where(id => id.StartsWith("FC-BTH"));
+                }
+                else if (User.Identity != null && User.Identity.Name == "inewsolar")
+                {
+                    chargePointsQuery = chargePointsQuery.Where(id => id.StartsWith("FC-KHO"));
+                }
+                else if (User.Identity != null && User.Identity.Name == "adminletsgo")
+                {
+                    chargePointsQuery = chargePointsQuery.Where(id => id.StartsWith("LGO"));
+                }
+
+                var chargePoints = chargePointsQuery.OrderBy(id => id).ToList();
 
                 ViewBag.ChargePoints = chargePoints;
                 ViewBag.ChargePointId = chargePointId;

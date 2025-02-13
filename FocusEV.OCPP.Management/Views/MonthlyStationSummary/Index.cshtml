@@ -1,0 +1,346 @@
+﻿@model IEnumerable<FocusEV.OCPP.Management.Models.MonthlyStationSummaryModel>
+ @using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+@{
+    ViewData["Title"] = @Localizer["Báo Cáo Hàng Tháng"];
+    ViewData["MainMenu"] = "Thống Kê";
+}
+
+<!-- Form chọn năm -->
+
+<div class="container-fluid col-sm-12">
+    <div class="row g-4 mb-4">
+        <div class="col-sm-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h4 class="card-title text-success fw-bold">Trạm Sạc</h4>
+                    <p class="card-text text-danger display-6 fw-bold">@ViewBag.TotalChargingStations</p>
+
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h4 class="card-title text-success fw-bold">Trụ Sạc</h4>
+                    <p class="card-text text-danger display-6 fw-bold">@ViewBag.TotalChargePoints</p>
+
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h4 class="card-title text-success fw-bold">Người Dùng</h4>
+                    <p class="card-text text-danger display-6 fw-bold">@ViewBag.TotalUserApps</p>
+
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h4 class="card-title text-success fw-bold">Chủ Đầu Tư</h4>
+                    <p class="card-text text-danger display-6 fw-bold">@ViewBag.TotalOwners</p>
+
+                </div>
+            </div>
+        </div>
+     </div>
+</div>
+<form asp-action="Index" method="get" class="form-inline d-flex align-items-center">
+    <label for="year" class="mr-2">Chọn năm:</label>
+    <input type="number" id="year" name="year" value="@ViewBag.SelectedYear" min="2000" max="2100" class="form-control mb-2 mr-sm-2" />
+    <button type="submit" class="btn btn-outline-success mb-2">Tìm kiếm</button>
+</form>
+    <div class="container-fluid col-sm-12"> 
+    <div class="row">
+        <div class="col-sm-6 card">
+            <!-- Biểu đồ tổng số giao dịch và doanh thu -->
+            <canvas id="monthlySummaryChart" width="800" height="400"></canvas>
+        </div>   
+        <div class="col-sm-6 card">
+            <!-- Biểu đồ doanh thu VNPay -->
+            <canvas id="vnpayRevenueChart" width="800" height="400"></canvas>
+        </div>
+    </div>
+</div>
+
+
+@* select top 5 charging station  *@
+
+<form asp-action="Index" method="get" class="form-inline d-flex align-items-center">
+    <label for="yearDaily" class="mr-2">Chọn năm:</label>
+    <input type="number" id="yearDaily" name="yearDaily" value="@ViewBag.SelectedYearDaily" min="2000" max="2100" class="form-control mb-2 mr-sm-2" />
+
+    <label for="monthDaily" class="mr-2">Chọn tháng:</label>
+    <input type="number" id="monthDaily" name="monthDaily" value="@ViewBag.SelectedMonthDaily" min="1" max="12" class="form-control mb-2 mr-sm-2" />
+
+    <button type="submit" class="btn btn-outline-success mb-2">Tìm kiếm</button>
+</form>
+
+
+<!-- Thêm phần hiển thị biểu đồ -->
+<canvas id="dailyRegistrationsChart" width="800" height="400"></canvas>
+
+<div class="container-fluid col-sm-12">
+    <div class="row g-4 mb-4">
+        <div class="col-sm-6">
+            <div class="card text-center shadow-sm">
+
+                <div class="card-body">
+                    <h5 class="text-success">Trạm Sạc Có Doanh Thu Cao Nhất Tháng</h5>
+                    @{
+                        var top5ChargingStations = ViewBag.Top5ChargingStations as List<TopChargingStationModel>;
+                    }
+
+                    @if (top5ChargingStations != null && top5ChargingStations.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Trạm Sạc</th>
+                                        <th>Doanh Thu</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var station in top5ChargingStations)
+                                    {
+                                        <tr>
+                                            <td>@station.ChargeStationName</td>
+                                            <td>@station.TotalRevenue.ToString("N0")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="alert alert-warning">No charging stations available for this month.</p>
+                    }
+
+
+
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="text-success">Người Dùng Có Tiêu Thụ KWh Cao Nhất Tháng</h5>
+                    @{
+                        var top5UserConsumption = ViewBag.Top5UserConsumption as List<TopUserConsumptionModel>;
+                    }
+
+                    @if (top5UserConsumption != null && top5UserConsumption.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Người Dùng</th>
+                                        <th>Họ Tên</th>
+                                        <th>KWh Sử Dụng</th>
+                                        <th>Doanh Thu</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var user in top5UserConsumption)
+                                    {
+                                        <tr>
+                                            <td>@user.UserName</td>
+                                            <td>@user.Fullname</td>
+                                            <td>@user.TotalkWhUsed </td>
+                                            <td>@user.TotalAmount</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="alert alert-warning">No top users available for this month.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const data = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Select(m => new { m.Month, m.TotalTransactions, TotalRevenue = m.TotalRevenue })));
+
+        const labels = data.map(item => `Tháng ${item.Month}`);
+        const transactionData = data.map(item => item.TotalTransactions);
+        const revenueData = data.map(item => item.TotalRevenue);
+
+        const ctx = document.getElementById('monthlySummaryChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Tổng số giao dịch',
+                        data: transactionData,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y1', // Trục Y trái
+                        type: 'bar',
+                    },
+                    {
+                        label: 'Tổng doanh thu (triệu đồng)',
+                        data: revenueData.map(value => value / 1000000), // Đổi đơn vị sang triệu đồng
+                        type: 'line',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        fill: false,
+                        tension: 0.3, // Làm mềm đường
+                        yAxisID: 'y2', // Trục Y phải
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y1: {
+                        type: 'linear',
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Tổng số giao dịch'
+                        }
+                    },
+                    y2: {
+                        type: 'linear',
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Tổng doanh thu (triệu đồng)'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                }
+            }
+        });
+
+        // Biểu đồ doanh thu VNPay
+        const vnpayData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Select(m => new { m.Month, m.TotalVnpayRevenue })));
+        const vnpayLabels = vnpayData.map(item => `Tháng ${item.Month}`);
+        const vnpayRevenueData = vnpayData.map(item => item.TotalVnpayRevenue);
+
+        const vnpayCtx = document.getElementById('vnpayRevenueChart').getContext('2d');
+        new Chart(vnpayCtx, {
+            type: 'line',
+            data: {
+                labels: vnpayLabels,
+                datasets: [{
+                    label: 'Doanh thu từ VNPay (triệu đồng)',
+                    data: vnpayRevenueData.map(value => value / 1000000), // Đổi đơn vị sang triệu đồng
+                    borderColor: 'rgba(54, 162, 235, 1)', // Màu xanh dương cho VNPay
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    fill: false,
+                    tension: 0.3, // Làm mềm đường
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        type: 'linear',
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Doanh thu VNPay (triệu đồng)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                }
+            }
+        });
+    });
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const dailyRegistrations = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.DailyRegistrations));
+
+        const days = dailyRegistrations.map(item => item.Day);
+        const registrations = dailyRegistrations.map(item => item.TotalRegistrations);
+
+        const dailyCtx = document.getElementById('dailyRegistrationsChart').getContext('2d');
+        new Chart(dailyCtx, {
+            type: 'line',
+            data: {
+                labels: days,
+                datasets: [{
+                    label: 'Số lượng đăng ký',
+                    data: registrations,
+                    borderColor: 'green',
+                    backgroundColor: 'rgba(0, 128, 0, 0.2)',
+                    borderWidth: 2,
+                    tension: 0.3, // Làm mềm đường
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Số lượng đăng ký'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Ngày'
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>

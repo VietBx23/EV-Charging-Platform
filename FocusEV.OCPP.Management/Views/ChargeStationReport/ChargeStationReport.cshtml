@@ -12,7 +12,7 @@
                         <label for="startDate">Ngày Bắt Đầu</label>
                         <input type="date" id="startDate" name="startDate" class="form-control form-control-lg"
                                min="2020-01-01" max="@DateTime.Now.ToString("yyyy-MM-dd")"
-                               value="@ViewBag.SelectedStartDate" oninput="toggleMonthYear()" />
+                               value="@ViewBag.StartDate" oninput="toggleMonthYear()" />
                     </div>
                 </div>
 
@@ -21,29 +21,29 @@
                         <label for="endDate">Ngày Kết Thúc</label>
                         <input type="date" id="endDate" name="endDate" class="form-control form-control-lg"
                                min="2020-01-01" max="@DateTime.Now.ToString("yyyy-MM-dd")"
-                               value="@ViewBag.SelectedEndDate" oninput="toggleMonthYear()" />
+                               value="@ViewBag.EndDate" oninput="toggleMonthYear()" />
                     </div>
                 </div>
 
-                <div class="col-lg-3 col-md-6" id="monthSelect">
-                    <div class="form-group">
-                        <label for="month">Tháng</label>
-                        <select id="month" name="month" class="form-control form-control-lg">
-                            @for (int i = 1; i <= 12; i++)
-                            {
-                                if (ViewBag.SelectedMonth != null && ViewBag.SelectedMonth == i)
-                                {
-                                    <option value="@i" selected>@i</option>
-                                }
-                                else
-                                {
-                                    <option value="@i">@i</option>
-                                }
-                            }
-                        </select>
-                    </div>
-                </div>
-
+                   @* <div class="col-lg-3 col-md-6" id="monthSelect">
+                       <div class="form-group">
+                           <label for="month">Tháng</label>
+                           <select id="month" name="month" class="form-control form-control-lg">
+                               @for (int i = 1; i <= 12; i++)
+                               {
+                                   if (ViewBag.SelectedMonth != null && ViewBag.SelectedMonth == i)
+                                   {
+                                       <option value="@i" selected>@i</option>
+                                   }
+                                   else
+                                   {
+                                       <option value="@i">@i</option>
+                                   }
+                               }
+                           </select>
+                       </div>
+                   </div> *@
+@* 
                 <div class="col-lg-3 col-md-6" id="yearSelect">
                     <div class="form-group">
                         <label for="year">Năm</label>
@@ -60,7 +60,7 @@
                             }
                         </select>
                     </div>
-                </div>
+                </div> *@
 
                 <div class="col-lg-3 col-md-6 align-self-end">
                     <button type="submit" class="btn btn-outline-success btn-lg mb-3">Tìm Kiếm</button>
@@ -256,7 +256,7 @@
 
     </table>
 </div>
-<script>
+@* <script>
     function toggleMonthYear() {
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
@@ -271,4 +271,4 @@
             yearSelect.style.display = 'block';
         }
     }
-</script>
+</script> *@

@@ -52,20 +52,43 @@ namespace FocusEV.OCPP.Management.Controllers
                 using (OCPPCoreContext dbContext = new OCPPCoreContext(this.Config))
                 {
                     Logger.LogTrace("ChargePoint: Loading charge points...");
-                    List<ChargePoint> dbChargePoints = dbContext.ChargePoints.ToList<ChargePoint>();
+
+                    // Lấy danh sách ChargePoints
+                    // Lấy danh sách ChargePoints
+                    List<ChargePoint> dbChargePoints;
+
+                    // Lấy tên người dùng đã đăng nhập
+                    string username = User.Identity.Name;
+
+                    // Tìm kiếm người dùng trong cơ sở dữ liệu để lấy OwnerId
+                    var user = dbContext.Accounts.FirstOrDefault(u => u.UserName == username);
+                    if (User.Identity.Name == "admin")
+                    {
+                        dbChargePoints = dbContext.ChargePoints.ToList();
+                    }
+                    else if (user != null)
+                    {
+                        // Nếu tìm thấy người dùng, lấy OwnerId
+                        int ownerId = (int)user.OwnerId;
+
+                        // Tìm ChargePoints theo OwnerId
+                        dbChargePoints = dbContext.ChargePoints.Where(cp => cp.OwnerId == ownerId).ToList();
+                    }
+                    else
+                    {
+                        // Nếu không tìm thấy người dùng, lấy tất cả ChargePoints
+                        dbChargePoints = dbContext.ChargePoints.ToList();
+                    }
+
                     Logger.LogInformation("ChargePoint: Found {0} charge points", dbChargePoints.Count);
 
                     ChargePoint currentChargePoint = null;
                     if (!string.IsNullOrEmpty(Id))
                     {
-                        foreach (ChargePoint cp in dbChargePoints)
+                        currentChargePoint = dbChargePoints.FirstOrDefault(cp => cp.ChargePointId.Equals(Id, StringComparison.InvariantCultureIgnoreCase));
+                        if (currentChargePoint != null)
                         {
-                            if (cp.ChargePointId.Equals(Id, StringComparison.InvariantCultureIgnoreCase))
-                            {
-                                currentChargePoint = cp;
-                                Logger.LogTrace("ChargePoint: Current charge point: {0} / {1}", cp.ChargePointId, cp.Name);
-                                break;
-                            }
+                            Logger.LogTrace("ChargePoint: Current charge point: {0} / {1}", currentChargePoint.ChargePointId, currentChargePoint.Name);
                         }
                     }
 
@@ -86,37 +109,35 @@ namespace FocusEV.OCPP.Management.Controllers
 
                             if (string.IsNullOrEmpty(errorMsg))
                             {
-                                // check if duplicate
-                                foreach (ChargePoint cp in dbChargePoints)
+                                // Check for duplicates
+                                if (dbChargePoints.Any(cp => cp.ChargePointId.Equals(cpvm.ChargePointId, StringComparison.InvariantCultureIgnoreCase)))
                                 {
-                                    if (cp.ChargePointId.Equals(cpvm.ChargePointId, StringComparison.InvariantCultureIgnoreCase))
-                                    {
-                                        // id already exists
-                                        errorMsg = _localizer["ChargePointIdExists"].Value;
-                                        Logger.LogInformation("ChargePoint: New => charge point ID already exists: {0}", cpvm.ChargePointId);
-                                        break;
-                                    }
+                                    errorMsg = _localizer["ChargePointIdExists"].Value;
+                                    Logger.LogInformation("ChargePoint: New => charge point ID already exists: {0}", cpvm.ChargePointId);
                                 }
                             }
 
                             if (string.IsNullOrEmpty(errorMsg))
                             {
-                                // Save tag in DB
-                                ChargePoint newChargePoint = new ChargePoint();
-                                newChargePoint.ChargePointId = cpvm.ChargePointId;
-                                newChargePoint.Name = cpvm.Name;
-                                newChargePoint.Comment = cpvm.Comment;
-                                newChargePoint.Username = cpvm.Username;
-                                newChargePoint.Password = cpvm.Password;
-                                newChargePoint.ClientCertThumb = cpvm.ClientCertThumb;
-                                newChargePoint.OwnerId = cpvm.OwnerId;
-                                newChargePoint.ChargeStationId = cpvm.ChargeStationId;
-                                newChargePoint.ChargePointModel = cpvm.ChargePointModel;
-                                newChargePoint.OCPPVersion = cpvm.OCPPVersion;
-                                newChargePoint.ChargePointState = cpvm.ChargePointState;
-                                newChargePoint.chargerPower = "60 kW";
-                                newChargePoint.outputType = "DC";
-                                newChargePoint.connectorType = "CCS2";
+                                // Save new charge point to DB
+                                var newChargePoint = new ChargePoint
+                                {
+                                    ChargePointId = cpvm.ChargePointId,
+                                    Name = cpvm.Name,
+                                    Comment = cpvm.Comment,
+                                    Username = cpvm.Username,
+                                    Password = cpvm.Password,
+                                    ClientCertThumb = cpvm.ClientCertThumb,
+                                    OwnerId = cpvm.OwnerId,
+                                    ChargeStationId = cpvm.ChargeStationId,
+                                    ChargePointModel = cpvm.ChargePointModel,
+                                    OCPPVersion = cpvm.OCPPVersion,
+                                    ChargePointState = cpvm.ChargePointState,
+                                    chargerPower = "60 kW",
+                                    outputType = "DC",
+                                    connectorType = "CCS2"
+                                };
+
                                 dbContext.ChargePoints.Add(newChargePoint);
                                 dbContext.SaveChanges();
                                 Logger.LogInformation("ChargePoint: New => charge point saved: {0} / {1}", cpvm.ChargePointId, cpvm.Name);
@@ -129,7 +150,7 @@ namespace FocusEV.OCPP.Management.Controllers
                                 return View("ChargePoint", cpvm);
                             }
                         }
-                        else if (currentChargePoint.ChargePointId == Id)
+                        else if (currentChargePoint?.ChargePointId == Id)
                         {
                             // Save existing charge point
                             Logger.LogTrace("ChargePoint: Saving charge point '{0}'", Id);
@@ -150,33 +171,52 @@ namespace FocusEV.OCPP.Management.Controllers
 
                         return RedirectToAction("ChargePoint", new { Id = "" });
                     }
-                    else  //list danh sách các trục sạc toàn bộ
+                    // List all charge points
+                    // Kiểm tra nếu user đã đăng nhập và tài khoản là 'goev'
+                    else if (User.Identity.Name.Equals("admin", StringComparison.InvariantCultureIgnoreCase))
                     {
-                        // Display charge point
-                        cpvm = new ChargePointViewModel();
-                        cpvm.ChargePoints = dbChargePoints;
-                        cpvm.CurrentId = Id;
-
+                        // Tài khoản admin: Hiển thị toàn bộ Owner và ChargeStation
                         ViewBag.OwnerList = dbContext.Owners.ToList();
                         ViewBag.ChargeStationList = dbContext.ChargeStations.ToList();
-
-                        if (currentChargePoint != null)
-                        {
-                            cpvm.ChargePointId = currentChargePoint.ChargePointId;
-                            cpvm.Name = currentChargePoint.Name;
-                            cpvm.Comment = currentChargePoint.Comment;
-                            cpvm.Username = currentChargePoint.Username;
-                            cpvm.Password = currentChargePoint.Password;
-                            cpvm.ClientCertThumb = currentChargePoint.ClientCertThumb;
-                            cpvm.OwnerId = currentChargePoint.OwnerId;
-                            cpvm.ChargeStationId = currentChargePoint.ChargeStationId;
-                            cpvm.ChargePointModel = currentChargePoint.ChargePointModel;
-                            cpvm.OCPPVersion = currentChargePoint.OCPPVersion;
-                            cpvm.ChargePointState = currentChargePoint.ChargePointState;
-                            cpvm.ChargePointSerial = currentChargePoint.ChargePointSerial;
-                        }
-                        return View(cpvm);
                     }
+                    else
+                    {
+                        // Tài khoản người dùng khác: Hiển thị theo OwnerId của họ
+                        var ownerId = dbContext.Accounts
+                                                .Where(u => u.UserName == User.Identity.Name)
+                                                .Select(u => u.OwnerId)
+                                                .FirstOrDefault();
+
+                        ViewBag.OwnerList = dbContext.Owners.Where(o => o.OwnerId == ownerId).ToList();
+                        ViewBag.ChargeStationList = dbContext.ChargeStations.Where(cs => cs.OwnerId == ownerId).ToList();
+                    }
+
+                    // Khởi tạo ChargePointViewModel
+                    cpvm = new ChargePointViewModel
+                    {
+                        ChargePoints = dbChargePoints,
+                        CurrentId = Id
+                    };
+
+                    // Nếu currentChargePoint không null, gán các giá trị
+                    if (currentChargePoint != null)
+                    {
+                        cpvm.ChargePointId = currentChargePoint.ChargePointId;
+                        cpvm.Name = currentChargePoint.Name;
+                        cpvm.Comment = currentChargePoint.Comment;
+                        cpvm.Username = currentChargePoint.Username;
+                        cpvm.Password = currentChargePoint.Password;
+                        cpvm.ClientCertThumb = currentChargePoint.ClientCertThumb;
+                        cpvm.OwnerId = currentChargePoint.OwnerId;
+                        cpvm.ChargeStationId = currentChargePoint.ChargeStationId;
+                        cpvm.ChargePointModel = currentChargePoint.ChargePointModel;
+                        cpvm.OCPPVersion = currentChargePoint.OCPPVersion;
+                        cpvm.ChargePointState = currentChargePoint.ChargePointState;
+                        cpvm.ChargePointSerial = currentChargePoint.ChargePointSerial;
+                    }
+
+                    return View(cpvm);
+
                 }
             }
             catch (Exception exp)
@@ -186,7 +226,8 @@ namespace FocusEV.OCPP.Management.Controllers
                 return RedirectToAction("Error", new { Id = "" });
             }
         }
-        [Authorize]
+
+        /*[Authorize]
         public IActionResult Terminal()
         {
             using (OCPPCoreContext dbContext = new OCPPCoreContext(this.Config))
@@ -195,7 +236,56 @@ namespace FocusEV.OCPP.Management.Controllers
                 return View(model);
             }
 
+        }*/
+
+
+        [Authorize]
+        public IActionResult Terminal()
+        {
+            using (OCPPCoreContext dbContext = new OCPPCoreContext(this.Config))
+            {
+                IEnumerable<ConnectorStatus> model;
+
+                if (User.Identity.Name == "goev")
+                {
+                    model = dbContext.ConnectorStatuses
+                        .Where(cs => cs.ChargePointId.StartsWith("GOEV"))
+                        .ToList(); // Lấy các ConnectorStatus có ChargePointId bắt đầu bằng "GOEV"
+                }
+                else if(User.Identity.Name == "adminbinhphuoc")
+                {
+                    model = dbContext.ConnectorStatuses
+                        .Where(cs => cs.ChargePointId.StartsWith("FC-BPH"))
+                        .ToList(); // Lấy các ConnectorStatus có ChargePointId bắt đầu bằng "GOEV"
+                }
+                else if (User.Identity.Name == "adminbinhthuan")
+                {
+                    model = dbContext.ConnectorStatuses
+                        .Where(cs => cs.ChargePointId.StartsWith("FC-BTH"))
+                        .ToList(); // Lấy các ConnectorStatus có ChargePointId bắt đầu bằng "GOEV"
+                }
+                else if (User.Identity.Name == "inewsolar")
+                {
+                    model = dbContext.ConnectorStatuses
+                        .Where(cs => cs.ChargePointId.StartsWith("FC-KHO"))
+                        .ToList(); // Lấy các ConnectorStatus có ChargePointId bắt đầu bằng "GOEV"
+                }
+                else if(User.Identity.Name == "adminletsgo")
+                {
+                    model = dbContext.ConnectorStatuses
+     .Where(cs => cs.ChargePointId.StartsWith("LGO-PYE") || cs.ChargePointId.StartsWith("LGO-BDI"))
+     .ToList();
+
+                }
+                else
+                {
+                    model = dbContext.ConnectorStatuses.ToList(); // Lấy tất cả ConnectorStatus
+                }
+
+                return View(model);
+            }
         }
+
 
         [HttpPost]
         public bool ChangeData(string id, string data, int ConnectorId)
@@ -220,71 +310,102 @@ namespace FocusEV.OCPP.Management.Controllers
 
 
         }
-        /// <summary>
-        /// Thông tin chủ đầu tư
-        /// </summary>
-        /// <param name="Nghiệp"></param>
-        /// <param name="owvm"></param>
-        /// <returns></returns>
+
         public IActionResult Operator(int OwnerId, OwnerViewModel owvm)
         {
             try
             {
-                if (User != null && !User.IsInRole(Constants.AdminRoleName))
+                // Kiểm tra quyền truy cập
+                if (User != null && !User.IsInRole(Constants.AdminRoleName) && User.Identity.Name != "admin")
                 {
                     Logger.LogWarning("ChargeTag: Request by non-administrator: {0}", User?.Identity?.Name);
                     TempData["ErrMsgKey"] = "AccessDenied";
                     return RedirectToAction("Error", new { Id = "" });
                 }
+
                 ViewBag.DatePattern = CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern;
                 ViewBag.Language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
-                owvm.OwnerId = OwnerId;
 
                 using (OCPPCoreContext dbContext = new OCPPCoreContext(this.Config))
                 {
-                    if (Request.Method == "POST")
+                    var currentUser = User.Identity.Name;
+
+                    // Nếu là admin (tên đăng nhập là "admin"), hiển thị toàn bộ danh sách
+                    if (currentUser == "admin")
                     {
-                        //Insert
-                        if (OwnerId == 0)
-                        {
-                            Owner owner = new Owner();
-                            owner.CreateDate = DateTime.Now;
-                            owner.Name = owvm.Name;
-                            owner.Address = owvm.Address;
-                            owner.Email = owvm.Email;
-                            owner.Phone = owvm.Phone;
-                            owner.Status = 1;
-                            dbContext.Owners.Add(owner);
-                        }
-                        //Update
-                        else
-                        {
-                            Owner owner = dbContext.Owners.Where(m => m.OwnerId == OwnerId).FirstOrDefault();
-                            owner.Address = owvm.Address;
-                            owner.Email = owvm.Email;
-                            owner.Phone = owvm.Phone;
-                            owner.Status = 1;
-                            owner.Name = owvm.Name;
-                        }
-                        dbContext.SaveChanges();
-                        return RedirectToAction("Operator", new { Id = "" });
+                        owvm.Owners = dbContext.Owners.ToList(); // Hiển thị toàn bộ
                     }
                     else
                     {
-                        var model = dbContext.Owners.ToList();
-                        owvm.Owners = model;
+                        // Lấy OwnerId từ bảng Account
+                        OwnerId = (int)dbContext.Accounts
+                            .Where(a => a.UserName == currentUser)
+                            .Select(a => a.OwnerId)
+                            .FirstOrDefault();
+
+                        if (OwnerId == 0)
+                        {
+                            TempData["ErrMsgKey"] = "Không tìm thấy OwnerId gắn với tài khoản.";
+                            return RedirectToAction("Error", new { Id = "" });
+                        }
+
+                        owvm.OwnerId = OwnerId;
+
+                        // Hiển thị dữ liệu chỉ theo OwnerId
+                        owvm.Owners = dbContext.Owners
+                            .Where(o => o.OwnerId == OwnerId)
+                            .ToList();
+                    }
+
+                    if (Request.Method == "POST")
+                    {
+                        // Thêm mới
+                        if (OwnerId == 0)
+                        {
+                            Owner owner = new Owner
+                            {
+                                CreateDate = DateTime.Now,
+                                Name = owvm.Name,
+                                Address = owvm.Address,
+                                Email = owvm.Email,
+                                Phone = owvm.Phone,
+                                Status = 1
+                            };
+                            dbContext.Owners.Add(owner);
+                        }
+                        // Cập nhật
+                        else
+                        {
+                            Owner owner = dbContext.Owners.FirstOrDefault(m => m.OwnerId == OwnerId);
+                            if (owner != null)
+                            {
+                                owner.Address = owvm.Address;
+                                owner.Email = owvm.Email;
+                                owner.Phone = owvm.Phone;
+                                owner.Status = 1;
+                                owner.Name = owvm.Name;
+                            }
+                        }
+                        dbContext.SaveChanges();
+                        return RedirectToAction("Operator");
+                    }
+                    else
+                    {
+                        // Hiển thị thông tin chỉnh sửa
                         if (OwnerId != 0)
                         {
-                            var current = model.Where(m => m.OwnerId == OwnerId).FirstOrDefault();
-                            owvm.Address = current.Address;
-                            owvm.Phone = current.Phone;
-                            owvm.Email = current.Email;
-                            owvm.Name = current.Name;
+                            var current = owvm.Owners.FirstOrDefault(m => m.OwnerId == OwnerId);
+                            if (current != null)
+                            {
+                                owvm.Address = current.Address;
+                                owvm.Phone = current.Phone;
+                                owvm.Email = current.Email;
+                                owvm.Name = current.Name;
+                            }
                         }
                         return View(owvm);
                     }
                 }
-
             }
             catch (Exception exp)
             {
@@ -292,8 +413,10 @@ namespace FocusEV.OCPP.Management.Controllers
                 TempData["ErrMessage"] = exp.Message;
                 return RedirectToAction("Error", new { Id = "" });
             }
-
         }
+
+
+
         public IActionResult DeleteOperator(int OwnerId)
         {
             try
@@ -350,6 +473,7 @@ namespace FocusEV.OCPP.Management.Controllers
                     TempData["ErrMsgKey"] = "AccessDenied";
                     return RedirectToAction("Error", new { Id = "" });
                 }
+
                 ViewBag.DatePattern = CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern;
                 ViewBag.Language = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
                 cst.ChargeStationId = ChargeStationId;
@@ -358,66 +482,97 @@ namespace FocusEV.OCPP.Management.Controllers
                 {
                     if (Request.Method == "POST")
                     {
-                        //Insert
+                        // Insert
                         if (ChargeStationId == 0)
                         {
-                            ChargeStation ChargeStation = new ChargeStation();
-                            ChargeStation.CreateDate = DateTime.Now;
-                            ChargeStation.Name = cst.Name;
-                            ChargeStation.Address = cst.Address;
-                            ChargeStation.OwnerId = cst.OwnerId;
-                            ChargeStation.Position = cst.Position;
-                            ChargeStation.Status = cst.Status;
-                            ChargeStation.Type = cst.Type;
-                            ChargeStation.Lat = cst.Lat;
-                            ChargeStation.Long = cst.Long;
-                            ChargeStation.Images = cst.Image;
-                            ChargeStation.QtyChargePoint = cst.QtyChargePoint;
-                            dbContext.ChargeStations.Add(ChargeStation);
+                            ChargeStation chargeStation = new ChargeStation
+                            {
+                                CreateDate = DateTime.Now,
+                                Name = cst.Name,
+                                Address = cst.Address,
+                                OwnerId = cst.OwnerId,
+                                Position = cst.Position,
+                                Status = cst.Status,
+                                Type = cst.Type,
+                                Lat = cst.Lat,
+                                Long = cst.Long,
+                                Images = cst.Image,
+                                QtyChargePoint = cst.QtyChargePoint
+                            };
+                            dbContext.ChargeStations.Add(chargeStation);
                         }
-                        //Update
+                        // Update
                         else
                         {
-                            ChargeStation ChargeStation = dbContext.ChargeStations.Where(m => m.ChargeStationId == ChargeStationId).FirstOrDefault();
-                            ChargeStation.Name = cst.Name;
-                            ChargeStation.Address = cst.Address;
-                            ChargeStation.OwnerId = cst.OwnerId;
-                            ChargeStation.Position = cst.Position;
-                            ChargeStation.Status = cst.Status;
-                            ChargeStation.Type = cst.Type;
-                            ChargeStation.Images = cst.Image;
-                            ChargeStation.Lat = cst.Lat;
-                            ChargeStation.Long = cst.Long;
-                            ChargeStation.QtyChargePoint = cst.QtyChargePoint;
+                            ChargeStation chargeStation = dbContext.ChargeStations.FirstOrDefault(m => m.ChargeStationId == ChargeStationId);
+                            if (chargeStation != null)
+                            {
+                                chargeStation.Name = cst.Name;
+                                chargeStation.Address = cst.Address;
+                                chargeStation.OwnerId = cst.OwnerId;
+                                chargeStation.Position = cst.Position;
+                                chargeStation.Status = cst.Status;
+                                chargeStation.Type = cst.Type;
+                                chargeStation.Images = cst.Image;
+                                chargeStation.Lat = cst.Lat;
+                                chargeStation.Long = cst.Long;
+                                chargeStation.QtyChargePoint = cst.QtyChargePoint;
+                            }
                         }
                         dbContext.SaveChanges();
                         return RedirectToAction("ChargeStation", new { Id = "" });
                     }
                     else
                     {
-                        var model = dbContext.ChargeStations.ToList();
-                        ViewBag.OwnerList = dbContext.Owners.ToList();
-                        cst.ChargeStations = model;
+                        var model = dbContext.ChargeStations.ToList(); // Lấy tất cả trạm sạc
+
+                        var currentUser = User.Identity.Name;
+                        int? ownerId = dbContext.Accounts
+                            .Where(a => a.UserName == currentUser)
+                            .Select(a => a.OwnerId)
+                            .FirstOrDefault();
+
+                        // Nếu tài khoản là admin, hiển thị tất cả
+                        if (currentUser == "admin")
+                        {
+                            cst.ChargeStations = model; // Hiển thị tất cả trạm sạc
+                            ViewBag.OwnerList = dbContext.Owners.ToList(); // Hiển thị tất cả chủ đầu tư
+                        }
+                        // Nếu là người dùng khác, hiển thị trạm sạc theo OwnerId
+                        else if (ownerId.HasValue)
+                        {
+                            cst.ChargeStations = model.Where(cs => cs.OwnerId == ownerId.Value).ToList(); // Hiển thị trạm sạc theo OwnerId
+                            ViewBag.OwnerList = dbContext.Owners.Where(o => o.OwnerId == ownerId.Value).ToList(); // Hiển thị chủ đầu tư theo OwnerId
+                        }
+                        else
+                        {
+                            // Nếu không tìm thấy OwnerId gắn với tài khoản, hiển thị tất cả
+                            cst.ChargeStations = model; // Hiển thị tất cả trạm sạc
+                            ViewBag.OwnerList = dbContext.Owners.ToList(); // Hiển thị tất cả chủ đầu tư
+                        }
+
                         if (ChargeStationId != 0)
                         {
-                            var current = model.Where(m => m.ChargeStationId == ChargeStationId).FirstOrDefault();
-                            cst.Address = current.Address;
-                            cst.Type = current.Type;
-                            cst.Position = current.Position;
-                            cst.Name = current.Name;
-                            cst.OwnerId = current.OwnerId;
-                            cst.Status = current.Status;
-                            cst.Type = current.Type;
-                            cst.Image = current.Images;
-                            cst.Lat = current.Lat;
-                            cst.Long = current.Long;
-                            cst.QtyChargePoint = current.QtyChargePoint;
+                            var current = model.FirstOrDefault(m => m.ChargeStationId == ChargeStationId);
+                            if (current != null)
+                            {
+                                cst.Address = current.Address;
+                                cst.Type = current.Type;
+                                cst.Position = current.Position;
+                                cst.Name = current.Name;
+                                cst.OwnerId = current.OwnerId;
+                                cst.Status = current.Status;
+                                cst.Image = current.Images;
+                                cst.Lat = current.Lat;
+                                cst.Long = current.Long;
+                                cst.QtyChargePoint = current.QtyChargePoint;
 
+
+                            }
                         }
                         return View(cst);
                     }
                 }
-
             }
             catch (Exception exp)
             {

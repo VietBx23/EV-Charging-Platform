@@ -32,115 +32,7 @@ namespace FocusEV.OCPP.Management.Controllers
         }
 
 
-        public async Task<IActionResult> ChargeStationReportDemo(int? month, int? year)
-        {
-            int selectedMonth = month ?? DateTime.Now.Month;
-            int selectedYear = year ?? DateTime.Now.Year;
-
-            // Lấy thông tin username của người dùng hiện tại
-            string currentUsername = User.Identity.Name?.ToLower();
-
-            using (var dbContext = new OCPPCoreContext(_config))
-            {
-                DateTime startDate = new DateTime(selectedYear, selectedMonth, 1);
-                DateTime endDate = startDate.AddMonths(1).AddDays(-1);
-
-                // Fetch transaction data, thêm điều kiện lọc theo OwnerId nếu là goev
-                var transactionData = await (from t in dbContext.Transactions
-                                             join cp in dbContext.ChargePoints on t.ChargePointId equals cp.ChargePointId
-                                             join cs in dbContext.ChargeStations on cp.ChargeStationId equals cs.ChargeStationId
-                                             join wt in dbContext.WalletTransactions on t.TransactionId equals wt.TransactionId into wtGroup
-                                             from wt in wtGroup.DefaultIfEmpty()
-                                             join ua in dbContext.UserApps on wt.UserAppId equals ua.Id into uaGroup
-                                             from ua in uaGroup.DefaultIfEmpty()
-                                             where t.StartTime >= startDate && t.StopTime <= endDate
-                                             && (currentUsername != "goev" || cs.OwnerId == 5) // Lọc theo OwnerId nếu là goev
-                                             select new
-                                             {
-                                                 ChargeStationName = cs.Name,
-                                                 MeterStop = t.MeterStop ?? 0,
-                                                 MeterStart = t.MeterStart ?? 0,
-                                                 wtAmount = wt != null ? (decimal)wt.Amount : 0m,
-                                                 Fullname = ua.Fullname
-                                             }).ToListAsync();
-
-                var transactionSummary = transactionData
-                    .GroupBy(g => g.ChargeStationName)
-                    .Select(g => new ChargeStationTransactionSummary
-                    {
-                        ChargeStationName = g.Key,
-                        TotalTransactions = g.Count(),
-                        LadoUseMobileTransactions = g.Count(x => x.Fullname != null && x.Fullname.ToLower().StartsWith("lado")),
-                        FocusUserTransactions = g.Count(x => x.Fullname != null && x.Fullname.ToLower().StartsWith("focus")),
-                        GuestUserTransactions = g.Count(x => x.Fullname != null && !x.Fullname.ToLower().StartsWith("lado") && !x.Fullname.ToLower().StartsWith("focus")),
-                        LadoCardUserTransactions = g.Count(x => x.Fullname == null)
-                    })
-                    .OrderByDescending(x => x.TotalTransactions)
-                    .ToList();
-
-                var kWhSummary = transactionData
-                    .GroupBy(g => g.ChargeStationName)
-                    .Select(g => new ChargeStationKWhSummary
-                    {
-                        ChargeStationName = g.Key,
-                        TotalKWhConsumedByStation = Math.Round(g.Sum(x => Math.Max(x.MeterStop - x.MeterStart, 0)), 2),
-                        TotalKWhLadoMobile = Math.Round(g.Where(x => x.Fullname != null && x.Fullname.ToLower().StartsWith("lado"))
-                                                             .Sum(x => Math.Max(x.MeterStop - x.MeterStart, 0)), 2),
-                        TotalKWhFocus = Math.Round(g.Where(x => x.Fullname != null && x.Fullname.ToLower().StartsWith("focus"))
-                                                     .Sum(x => Math.Max(x.MeterStop - x.MeterStart, 0)), 2),
-                        TotalKWhGuest = Math.Round(g.Where(x => x.Fullname != null && !x.Fullname.ToLower().StartsWith("lado") && !x.Fullname.ToLower().StartsWith("focus"))
-                                                     .Sum(x => Math.Max(x.MeterStop - x.MeterStart, 0)), 2),
-                        TotalKWhLadoCard = Math.Round(g.Where(x => x.Fullname == null)
-                                                        .Sum(x => Math.Max(x.MeterStop - x.MeterStart, 0)), 2)
-                    })
-                    .OrderByDescending(x => x.TotalKWhConsumedByStation)
-                    .ToList();
-
-                var unitPrice = await dbContext.Unitprices.Where(up => up.IsActive == 1).Select(up => (double)up.Price).FirstOrDefaultAsync();
-
-                var amountSummary = transactionData
-                    .GroupBy(g => g.ChargeStationName)
-                    .Select(grouped => new ChargeStationAmountSummary
-                    {
-                        ChargeStationName = grouped.Key,
-                        TotalAmount = grouped.Sum(g => (double)g.wtAmount +
-                            (g.Fullname == null
-                                ? Math.Max(0, (double)((g.MeterStop - g.MeterStart) * unitPrice))
-                                : 0))
-                            .ToString("N0", CultureInfo.CreateSpecificCulture("vi-VN")) + " VNĐ",
-                        TotalAmountLadoMobile = grouped.Sum(g => g.Fullname != null && g.Fullname.ToLower().StartsWith("lado")
-                            ? (double)g.wtAmount
-                            : 0)
-                            .ToString("N0", CultureInfo.CreateSpecificCulture("vi-VN")) + " VNĐ",
-                        TotalAmountFocus = grouped.Sum(g => g.Fullname != null && g.Fullname.ToLower().StartsWith("focus")
-                            ? (double)g.wtAmount
-                            : 0)
-                            .ToString("N0", CultureInfo.CreateSpecificCulture("vi-VN")) + " VNĐ",
-                        TotalAmountGuest = grouped.Sum(g => g.Fullname != null && !g.Fullname.ToLower().StartsWith("lado") && !g.Fullname.ToLower().StartsWith("focus")
-                            ? (double)g.wtAmount
-                            : 0)
-                            .ToString("N0", CultureInfo.CreateSpecificCulture("vi-VN")) + " VNĐ",
-                        TotalAmountLadoCard = grouped.Sum(g => g.Fullname == null
-                            ? Math.Max(0, (double)((g.MeterStop - g.MeterStart) * unitPrice))
-                            : 0)
-                            .ToString("N0", CultureInfo.CreateSpecificCulture("vi-VN")) + " VNĐ"
-                    })
-                    .OrderByDescending(x => double.Parse(x.TotalAmount.Replace(" VNĐ", ""), NumberStyles.AllowThousands, CultureInfo.CreateSpecificCulture("vi-VN")))
-                    .ToList();
-
-                ViewBag.SelectedMonth = selectedMonth;
-                ViewBag.SelectedYear = selectedYear;
-
-                var reportModel = new ChargeStationReportModel
-                {
-                    TransactionSummaries = transactionSummary,
-                    KWhSummaries = kWhSummary,
-                    AmountSummaries = amountSummary
-                };
-
-                return View(reportModel);
-            }
-        }
+       
         public async Task<IActionResult> ChargeStationReport( int? month, int? year, DateTime? startDate, DateTime? endDate)
         {
             // Nếu người dùng không chọn tháng hoặc năm, sử dụng tháng và năm hiện tại
@@ -171,7 +63,13 @@ namespace FocusEV.OCPP.Management.Controllers
                                              join ua in dbContext.UserApps on wt.UserAppId equals ua.Id into uaGroup
                                              from ua in uaGroup.DefaultIfEmpty()
                                              where t.StartTime >= actualStartDate && t.StopTime <= actualEndDate
-                                             && (currentUsername != "goev" || cs.OwnerId == 5) // Lọc theo OwnerId nếu là goev
+                                             && ((currentUsername == "goev" && cs.OwnerId == 5)
+                                                 || (currentUsername == "adminbinhphuoc" && cs.OwnerId == 6)
+                                                 || (currentUsername == "adminbinhthuan" && cs.OwnerId == 7)
+                                                   || (currentUsername == "adminbinhthuan" && cs.OwnerId == 8)
+                                                    || (currentUsername == "inewsolar" && cs.OwnerId == 9)
+
+                                                 || currentUsername != "goev" && currentUsername != "adminbinhphuoc" && currentUsername!="adminbinhthuan" && currentUsername != "inewsolar" && currentUsername != "adminletsgo") // Lọc theo OwnerId nếu là goev hoặc adminbinhphuoc
                                              select new
                                              {
                                                  ChargeStationName = cs.Name,
@@ -180,6 +78,7 @@ namespace FocusEV.OCPP.Management.Controllers
                                                  wtAmount = wt != null ? (decimal)wt.Amount : 0m,
                                                  Fullname = ua.Fullname
                                              }).ToListAsync();
+
 
                 // Tính toán summary cho giao dịch
                 var transactionSummary = transactionData
